@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: thinkrank_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${WP_DB_NAME:-wordpress}
+      MYSQL_USER: ${WP_DB_USER:-wordpress}
+      MYSQL_PASSWORD: ${WP_DB_PASS:-wordpress}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - thinkrank_net
+
+  wordpress:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: thinkrank_wordpress
+    restart: unless-stopped
+    ports:
+      - "${WP_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ${WP_DB_NAME:-wordpress}
+      WORDPRESS_DB_USER: ${WP_DB_USER:-wordpress}
+      WORDPRESS_DB_PASSWORD: ${WP_DB_PASS:-wordpress}
+      WORDPRESS_TABLE_PREFIX: wp_
+      WORDPRESS_DEBUG: '1'
+      WORDPRESS_DEBUG_LOG: '1'
+      WORDPRESS_DEBUG_DISPLAY: '0'
+      WORDPRESS_CONFIG_EXTRA: "define('MYSQL_CLIENT_FLAGS', 0);"
+    volumes:
+      - ../Herd/thinkrank/wp-content/plugins/thinkrank:/var/www/html/wp-content/plugins/thinkrank
+      - ../Herd/thinkrank/wp-content/plugins/thinkrank-pro:/var/www/html/wp-content/plugins/thinkrank-pro
+      - ./test-results:/tmp/test-results
+      - wp_uploads:/var/www/html/wp-content/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - thinkrank_net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: thinkrank_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+    depends_on:
+      - db
+    networks:
+      - thinkrank_net
+
+volumes:
+  db_data:
+  wp_uploads:
+
+networks:
+  thinkrank_net:
+    driver: bridge

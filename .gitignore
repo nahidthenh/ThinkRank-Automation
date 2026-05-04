@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Environment — contains DB passwords, do not commit
+.env
+
+# Playwright test output (generated at runtime)
+test-results/artifacts/
+test-results/html-report/
+test-results/.auth/
+test-results/playwright-results.json
+test-results/plugin-manifest.json
+test-results/results.xml
+test-results/phpunit-output.txt
+test-results/exit-code.txt
+test-results/last-report.md
+
+# Keep the directory itself
+!test-results/.gitkeep
+
+# Playwright browser binaries cache
+/playwright/.cache/
+
+# Docker volumes (managed by Docker, not git)
+db_data/
+wp_uploads/
+
+# OS files
+.DS_Store
+.DS_Store?
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
