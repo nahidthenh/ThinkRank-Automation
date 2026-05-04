@@ -1,30 +1,54 @@
 /**
  * WordPress REST API helper.
- * Gets a nonce from the admin and provides authenticated fetch().
+ * Authenticates using the stored browser session (cookies) from auth.setup.js
+ * and fetches a WP nonce to authorize REST requests.
  */
 
 const { request } = require('@playwright/test');
+const path = require('path');
+const fs = require('fs');
 
 const WP_URL = process.env.WP_URL || 'http://localhost:8080';
-const WP_USER = process.env.WP_ADMIN_USER || 'admin';
-const WP_PASS = process.env.WP_ADMIN_PASS || 'admin123';
-
-/** Encode credentials for Basic Auth */
-const basicAuth = Buffer.from(`${WP_USER}:${WP_PASS}`).toString('base64');
+const STORAGE_PATH = path.resolve('test-results/.auth/admin.json');
 
 /**
  * Returns an APIRequestContext authenticated against the WP REST API.
- * Uses HTTP Basic Auth (Application Passwords style header works for test environments).
+ * Loads the stored browser session from auth.setup.js, then fetches a
+ * WP nonce so REST endpoints that require manage_options will accept the request.
  */
 async function createApiContext() {
+  // Load stored session if available
+  const storageState = fs.existsSync(STORAGE_PATH) ? STORAGE_PATH : undefined;
+
   const ctx = await request.newContext({
     baseURL: WP_URL,
+    storageState,
+  });
+
+  // Fetch a WP REST nonce using the authenticated session
+  let nonce = '';
+  try {
+    const nonceResp = await ctx.get('/wp-admin/admin-ajax.php?action=rest-nonce');
+    if (nonceResp.ok()) {
+      nonce = (await nonceResp.text()).trim();
+    }
+  } catch {
+    // If nonce fetch fails, proceed without — GET endpoints may still work
+  }
+
+  // Dispose the session-only context and rebuild with the nonce header
+  await ctx.dispose();
+
+  const authedCtx = await request.newContext({
+    baseURL: WP_URL,
+    storageState,
     extraHTTPHeaders: {
-      Authorization: `Basic ${basicAuth}`,
+      'X-WP-Nonce': nonce,
       'Content-Type': 'application/json',
     },
   });
-  return ctx;
+
+  return authedCtx;
 }
 
 /**
