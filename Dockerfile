@@ -31,3 +31,11 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Enable Apache mod_rewrite for WordPress permalinks
 RUN a2enmod rewrite
+
+# Increase PHP upload size and memory limits
+COPY uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
+# Ensure uploads directory is writable by www-data
+RUN mkdir -p /var/www/html/wp-content/uploads \
+    && chown -R www-data:www-data /var/www/html/wp-content/uploads \
+    && chmod -R 755 /var/www/html/wp-content/uploads
