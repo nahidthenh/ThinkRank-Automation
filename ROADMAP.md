@@ -106,8 +106,8 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - ✅ **locations** (2): `/locations` `/{id}` — CRUD✅ **update(POST /{id})⬜ E⬜ U⬜ F⬜(LocalBusiness schema)**
 - 🟡 **license** (6): `/get-license` `/activate` `/deactivate` `/delete-license` `/resend-otp` `/submit-otp` — R🟡(get) U🟡(screen) **activate/deactivate flow⬜ E⬜**
 - 🟡 **broken-links** (8): `/broken-links` `/scan` `/{id}` `/{id}/dismiss` `/{id}/edit` `/{id}/recheck` `/{id}/restore` `/{id}/unlink` — R🟡(list) **scan flow⬜ item actions⬜ E⬜**
-- 🟡 **internal-links** (4): `/post-types` `/posts` `/suggest` `/apply` — R🟡(types/posts) **suggest⬜ apply⬜ E⬜**
-- 🟡 **rank-tracker** (5): `/keywords`(GET/POST) `/keywords/{hash}` `/suggestions` `/history` `/refresh` — R🟡(kw/sugg) **add/delete keyword W⬜ history⬜ refresh⬜**
+- ✅ **internal-links** (4): `/post-types` `/posts` `/suggest` `/apply` — R✅(types/posts) W✅(suggest returns suggestions) · apply⬜(mutates content)
+- ✅ **rank-tracker** (5): `/keywords`(GET/POST) `/keywords/{hash}` `/suggestions` `/history` `/refresh` — R✅(keywords/suggestions) W✅(add keyword → listed → delete) E✅(history without param→400) · refresh⬜(external)
 - ✅ **custom-schema** (3): `/entries`(GET/POST) `/entries/{id}` `/targets` — R✅(entries/targets) W✅(create→listed→delete) E✅(invalid JSON → valid_json=false) · F⬜(custom JSON-LD needs targeting conditions)
 - 🟡 **google-analytics** (4): `/accounts` `/properties` `/data-streams` `/run-report` — R🟡(accounts) **rest⬜ (connection-gated)**
 - 🟡 **publisher-sitemaps** (1): `/settings` — R🟡 **W⬜ F⬜(news sitemap)**
@@ -149,7 +149,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 6. ✅ **SEO score & analyzer** — score calculate/get/latest/history + E; analyzer report/run. Score-panel U deferred.
 7. ✅ **Redirections (finish)** — 404-logs read, invalid match_type E, regex redirect 301 on front. from-404/clear skipped (mutate real logs).
 8. ✅ **Custom schema (Pro)** — create→listed→delete, valid_json flag. Front JSON-LD deferred (targeting conditions).
-9. **Rank tracker / Internal links / Broken links (Pro)** — write flows
+9. ✅ **Rank tracker / Internal links (Pro)** — rank-tracker add→list→delete (poll-hardened) + reads; internal-links suggest + reads. Broken-links write flows (scan/item actions) deferred (mutate real data).
 10. **Instant indexing · llms.txt · image SEO** — write + frontend
 11. **Settings-management** — export→import→restore round-trip
 12. **AI tools** — generation endpoints (graceful no-key), content-brief generate
