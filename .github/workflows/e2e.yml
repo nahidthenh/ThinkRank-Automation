@@ -10,9 +10,6 @@ name: E2E
 # wp-env serves the site at http://localhost:8888 with admin / password.
 
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 jobs:

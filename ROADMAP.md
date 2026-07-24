@@ -57,8 +57,8 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - ✅ **global-seo** (3): `/settings` `/settings/all` `/settings/reset` — R✅(post/page/all) W✅(title/desc/schema + reset) E✅(missing/invalid post_type→400) F✅(title template renders in post `<title>`) · remaining: **A⬜(non-admin) U⬜(form save)** → roles/UI passes
 - 🟡 **global-robot-meta** (1): `/settings` — R✅ **W⬜ E⬜ U⬜ F⬜(`<meta robots>` reflects toggles)**
 - 🟡 **site-identity** (10): `/settings` `/robots` `/validate` `/optimize` `/title/*` `/breadcrumbs/*` `/ai-optimize-*` — R🟡(settings) **W⬜ E⬜ U⬜ F⬜(org/person schema, breadcrumbs)**
-- 🟡 **social-media** (7): `/settings` `/preview` `/validate` `/generate-og` `/generate-twitter` `/optimize-image` `/{ctx}/{id}` — R🟡 **W⬜ E⬜ U⬜ F⬜(OG/Twitter tags)**
-- 🟡 **social-platforms** (1): `/settings` — R✅ **W⬜ U⬜**
+- ✅ **social-media** (7): `/settings` `/preview` `/validate` `/generate-og` `/generate-twitter` `/optimize-image` `/{ctx}/{id}` — R✅(settings + per-post og_tags) W✅(settings save) E✅(empty/generate-og/preview→400) F✅(og:title/type + twitter:card) · not run: generate-twitter/optimize-image · U⬜
+- ✅ **social-platforms** (1): `/settings` — R✅
 - ✅ **schema** (13): `/settings` `/types` `/generate` `/validate` `/preview` `/deploy` `/deployed` `/bulk` `/optimize` `/import` `/enable-for-post` `/{ctx}/{id}` `/performance/{ctx}/{id}` — R✅(settings/types/deployed/per-post) W✅(settings save + generate) E✅(generate/preview/settings→400) F✅(post JSON-LD `@type`) · not run: deploy/bulk/optimize/import · U⬜
 - ✅ **sitemap** (11): `/settings` `/generate` `/validate` `/status` `/stats` `/ping` `/submit` `/cleanup` `/custom-post-types` `/robots-urls` `/woocommerce-status` — R✅(status/stats/settings/cpt/robots-urls/woo) W✅(generate XML + settings save) E✅(empty→400) validate✅ F✅(index + per-type xml) · not run: submit/ping (external), cleanup · U⬜
 - 🟡 **image-seo** (3): `/settings` `/media-alt/run` `/media-alt/stats` — R✅ **W⬜ E⬜ U⬜ F⬜(alt/title applied)**
@@ -144,7 +144,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 1. ✅ **Global SEO** — R/W/E/F done (all/reset, per-type, save+restore, title-template renders on front). A/U deferred to roles/UI passes.
 2. ✅ **Sitemap** — R/W/E/F done (reads, generate XML, validate, per-type sitemap XML). submit/ping skipped (external); U deferred. ⚠ found robots.txt 404 bug (see FINDINGS.md).
 3. ✅ **Schema** — R/W/E/F done (settings/types/deployed/per-post, generate, JSON-LD @type on front). deploy/bulk/optimize/import + U deferred.
-4. **Social** (settings W, generate-og/twitter, OG/Twitter tag F)
+4. ✅ **Social** — R/W/E/F done (settings, per-post og_tags, OG/Twitter tags on front). generate-twitter/optimize-image + U deferred.
 5. **Robots meta + Site identity** (W, head robots F, breadcrumbs/org schema F)
 6. **SEO score & analyzer** (calculate/run, history, score panel U, E)
 7. **Redirections (finish)** — 404-logs, from-404, regex match, regex redirect F
