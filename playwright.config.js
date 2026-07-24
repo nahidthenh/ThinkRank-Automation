@@ -1,13 +1,10 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Load target site + admin credentials from .env (never committed)
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+// Load target site + admin credentials from .env (never committed).
+// Reads .env from the project root (the dir you run Playwright from).
+dotenv.config({ quiet: true });
 
 // The site under test. Nothing is hardcoded — point this at any WordPress
 // site that has ThinkRank Free + Pro active by editing WP_URL in .env.
