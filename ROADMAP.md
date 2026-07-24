@@ -94,8 +94,9 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - 🟡 **capabilities** (1) · 🟡 **plugin-info** (1) · 🟡 **system-status** (1) — R✅
 
 ### Cross-cutting (free)
-- 🟡 **Security**: unauth → 401/403 — done for 5 endpoints; **extend to all write endpoints**
-- ⬜ **Authz/roles**: non-admin (editor/author/contributor) rejected on manage endpoints
+- 🟡 **Security**: unauth → 401/403 — done for 5 endpoints; extend to all write endpoints
+- ✅ **Authz/roles**: real editor user created via REST → rejected (401/403) on manage
+  writes (global-seo, schema); user cleaned up. Extend to more roles/endpoints as needed.
 - 🟡 **Frontend**: homepage+post meta, JSON-LD, sitemap index — **extend: robots meta values, canonical correctness, per-config schema, robots.txt, llms.txt**
 
 ---
