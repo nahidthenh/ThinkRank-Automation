@@ -67,8 +67,8 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - ⬜ **focus-keyword-usage** (1): `/focus-keyword-usage` — **R⬜**
 
 ### SEO scoring & analysis
-- 🟡 **seo-score** (4): `/calculate` `/get` `/latest` `/history` — R✅ W✅(calc) **E⬜(bad post_id) U⬜(score panel) history/latest⬜**
-- 🟡 **seo-analyzer** (2): `/seo-analyzer` `/run` — R✅ **W⬜(run) U⬜**
+- ✅ **seo-score** (4): `/calculate` `/get` `/latest` `/history` — R✅(get/latest/history) W✅(calculate) E✅(missing/invalid post_id→400) · U⬜(score panel)
+- ✅ **seo-analyzer** (2): `/seo-analyzer` `/run` — R✅ W✅(run returns fresh scored report) · U⬜
 - 🟡 **performance** (6): `/recommendations` `/opportunities` `/diagnostics` `/history` `/monitor` `/collect` — R🟡(recs) **rest⬜ U⬜**
 - 🟡 **seo-analytics** (14): `/status` `/dashboard` `/insights` `/opportunities` `/branded` `/countries` `/indexing-status` `/intelligent-*` `/search-daily` `/search-totals` `/refresh` `/setup/search-console` `/test-connections` — R🟡(status/dash) **rest⬜ E⬜**
 - ⬜ **analytics** (3): `/overview` `/usage` `/costs` — **R⬜**
@@ -146,7 +146,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 3. ✅ **Schema** — R/W/E/F done (settings/types/deployed/per-post, generate, JSON-LD @type on front). deploy/bulk/optimize/import + U deferred.
 4. ✅ **Social** — R/W/E/F done (settings, per-post og_tags, OG/Twitter tags on front). generate-twitter/optimize-image + U deferred.
 5. ✅ **Robots meta + Site identity** — R/W/E/F done (settings, robots content, templates, head robots meta, Org/Person JSON-LD). robots.txt 404 documented (test.fail). validate/optimize + U deferred.
-6. **SEO score & analyzer** (calculate/run, history, score panel U, E)
+6. ✅ **SEO score & analyzer** — score calculate/get/latest/history + E; analyzer report/run. Score-panel U deferred.
 7. **Redirections (finish)** — 404-logs, from-404, regex match, regex redirect F
 8. **Custom schema (Pro)** — create→verify→delete, custom JSON-LD F
 9. **Rank tracker / Internal links / Broken links (Pro)** — write flows

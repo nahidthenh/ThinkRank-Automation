@@ -69,16 +69,7 @@ test.describe('@free REST — tooling read contracts', () => {
     expect(Array.isArray(body?.data?.roles)).toBeTruthy();
   });
 
-  // F13 — SEO Analyzer.
-  test('seo-analyzer returns a scored report', async () => {
-    const { status, body } = await trGet(api, '/seo-analyzer');
-    expect(status).toBe(200);
-    const score = body?.data?.overall_score;
-    expect(typeof score).toBe('number');
-    expect(score).toBeGreaterThanOrEqual(0);
-    expect(score).toBeLessThanOrEqual(100);
-    expect(body.data).toHaveProperty('grade');
-  });
+  // F13 — SEO Analyzer: covered in depth by tests/free/seo-score.spec.js.
 
   // F20 — Performance recommendations.
   test('performance/recommendations returns grouped recommendations', async () => {
