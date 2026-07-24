@@ -153,8 +153,11 @@ green and committable.
     broken-link scan flow; internal-link suggestion apply.
 - **Phase 6 — Long tail**
   Analytics, AI tools, migration, wizard, WooCommerce, GA/Search Console, advanced sitemaps.
-- **Phase 7 — Hardening**
-  Frontend regression snapshots, cross-browser (firefox/webkit), CI wiring, flake triage.
+- **Phase 7 — Hardening** *(in progress)*
+  - ✅ CI wiring: GitHub Actions workflow (`.github/workflows/e2e.yml`) stands up ephemeral
+    WordPress via `wp-env` (`.wp-env.json`), builds + installs Free & Pro, runs the suite.
+    Needs the `THINKRANK_TOKEN` secret and a first validation run.
+  - ⏳ Next: frontend regression snapshots, cross-browser (firefox/webkit), flake triage.
 
 ---
 

@@ -1,0 +1,101 @@
+name: E2E
+
+# Ephemeral WordPress in CI: stand up a fresh WP via wp-env, build + install
+# ThinkRank Free and Pro into it, then run the Playwright suite against it.
+#
+# Required repository secret:
+#   THINKRANK_TOKEN — a GitHub token (PAT or fine-grained) with READ access to
+#   WPDevelopers/thinkrank and WPDevelopers/thinkrank-pro (both private).
+#
+# wp-env serves the site at http://localhost:8888 with admin / password.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      HUSKY: '0'
+      WP_URL: http://localhost:8888
+      WP_ADMIN_USER: admin
+      WP_ADMIN_PASS: password
+    steps:
+      - name: Checkout automation repo
+        uses: actions/checkout@v4
+
+      # pnpm builds the plugins (pnpm-lock); npm runs the automation repo (package-lock).
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up PHP + Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+
+      # ── Fetch the plugin sources (private repos) ──────────────────────────
+      - name: Check out ThinkRank Free
+        uses: actions/checkout@v4
+        with:
+          repository: WPDevelopers/thinkrank
+          token: ${{ secrets.THINKRANK_TOKEN }}
+          path: .wp-plugins/thinkrank
+
+      - name: Check out ThinkRank Pro
+        uses: actions/checkout@v4
+        with:
+          repository: WPDevelopers/thinkrank-pro
+          token: ${{ secrets.THINKRANK_TOKEN }}
+          path: .wp-plugins/thinkrank-pro
+
+      # ── Build the plugins (assets/, dist/, vendor/ are gitignored) ────────
+      - name: Build ThinkRank Free
+        working-directory: .wp-plugins/thinkrank
+        run: |
+          composer install --no-dev --optimize-autoloader --no-interaction
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm run build
+
+      - name: Build ThinkRank Pro
+        working-directory: .wp-plugins/thinkrank-pro
+        run: |
+          composer install --no-dev --optimize-autoloader --no-interaction
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm run build
+
+      # ── Automation deps + browser (npm) ───────────────────────────────────
+      - name: Install automation dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      # ── Stand up WordPress and activate the plugins ───────────────────────
+      - name: Start WordPress (wp-env)
+        run: npx wp-env start
+
+      - name: Activate ThinkRank Free + Pro
+        run: npx wp-env run cli wp plugin activate thinkrank thinkrank-pro
+
+      # ── Run the suite ─────────────────────────────────────────────────────
+      - name: Run E2E suite (fast lane)
+        run: npm test
+
+      - name: Run editor lane
+        run: npm run test:editor
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

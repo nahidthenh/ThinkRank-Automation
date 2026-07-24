@@ -39,3 +39,6 @@ npm-debug.log*
 /playwright-report/
 /blob-report/
 /playwright/.auth/
+
+# CI: ThinkRank plugin sources checked out + built for wp-env (never committed)
+/.wp-plugins/
