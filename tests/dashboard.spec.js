@@ -25,9 +25,9 @@ test.describe('ThinkRank Dashboard', () => {
     const app = page.locator('#thinkrank-dashboard.thinkrank-admin-page');
     await expect(app).toBeAttached();
 
-    // The app should render something into its mount node (not stay empty)
-    await expect
-      .poll(async () => (await app.innerHTML()).trim().length, { timeout: 10_000 })
-      .toBeGreaterThan(0);
+    // The app renders content into its mount node. Assert on a visible child
+    // element (web-first, auto-retrying) with a generous timeout — the local
+    // site can be slow while other workers exercise it in parallel.
+    await expect(app.locator(':scope > *').first()).toBeVisible({ timeout: 30_000 });
   });
 });

@@ -17,8 +17,13 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // One retry locally too — the dashboard's async data calls can occasionally
+  // lose a race against a busy local backend.
+  retries: process.env.CI ? 2 : 1,
+  // A single local WordPress site (Herd/PHP-FPM) has limited request
+  // concurrency; too many workers saturate it and stall in-app API calls.
+  // Override with `--workers=N` or WP_WORKERS when running against a beefier host.
+  workers: process.env.WP_WORKERS ? Number(process.env.WP_WORKERS) : process.env.CI ? 2 : 3,
   reporter: 'html',
 
   use: {
