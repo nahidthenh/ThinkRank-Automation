@@ -54,7 +54,7 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 > Each line: **area** (route count) — dimensions to cover — current status.
 
 ### Core SEO settings
-- ⬜🟡 **global-seo** (3): `/settings` `/settings/all` `/settings/reset` — R✅ W✅(title) **E⬜ A⬜ U⬜ F⬜(title/desc/schema in head)** · deepen: all/reset, per-post-type, UI save
+- ✅ **global-seo** (3): `/settings` `/settings/all` `/settings/reset` — R✅(post/page/all) W✅(title/desc/schema + reset) E✅(missing/invalid post_type→400) F✅(title template renders in post `<title>`) · remaining: **A⬜(non-admin) U⬜(form save)** → roles/UI passes
 - 🟡 **global-robot-meta** (1): `/settings` — R✅ **W⬜ E⬜ U⬜ F⬜(`<meta robots>` reflects toggles)**
 - 🟡 **site-identity** (10): `/settings` `/robots` `/validate` `/optimize` `/title/*` `/breadcrumbs/*` `/ai-optimize-*` — R🟡(settings) **W⬜ E⬜ U⬜ F⬜(org/person schema, breadcrumbs)**
 - 🟡 **social-media** (7): `/settings` `/preview` `/validate` `/generate-og` `/generate-twitter` `/optimize-image` `/{ctx}/{id}` — R🟡 **W⬜ E⬜ U⬜ F⬜(OG/Twitter tags)**
@@ -141,7 +141,7 @@ Work top-down; each feature = one comprehensive spec covering its R/W/E/A/U/F
 dimensions, self-cleaning, verified green before commit. Proposed priority
 (highest user-facing value + write surface first):
 
-1. **Global SEO** (finish: all/reset, per-type, UI save, head-output F, E)
+1. ✅ **Global SEO** — R/W/E/F done (all/reset, per-type, save+restore, title-template renders on front). A/U deferred to roles/UI passes.
 2. **Sitemap** (settings W, generate/validate/status, per-type xml F, robots urls)
 3. **Schema** (types/generate/validate/deploy, per-context, JSON-LD F)
 4. **Social** (settings W, generate-og/twitter, OG/Twitter tag F)
