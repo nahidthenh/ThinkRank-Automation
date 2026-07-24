@@ -108,7 +108,7 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - 🟡 **broken-links** (8): `/broken-links` `/scan` `/{id}` `/{id}/dismiss` `/{id}/edit` `/{id}/recheck` `/{id}/restore` `/{id}/unlink` — R🟡(list) **scan flow⬜ item actions⬜ E⬜**
 - 🟡 **internal-links** (4): `/post-types` `/posts` `/suggest` `/apply` — R🟡(types/posts) **suggest⬜ apply⬜ E⬜**
 - 🟡 **rank-tracker** (5): `/keywords`(GET/POST) `/keywords/{hash}` `/suggestions` `/history` `/refresh` — R🟡(kw/sugg) **add/delete keyword W⬜ history⬜ refresh⬜**
-- 🟡 **custom-schema** (3): `/entries`(GET/POST) `/entries/{id}` `/targets` — R🟡(entries/targets) **create→verify→delete W⬜ F⬜(custom JSON-LD)**
+- ✅ **custom-schema** (3): `/entries`(GET/POST) `/entries/{id}` `/targets` — R✅(entries/targets) W✅(create→listed→delete) E✅(invalid JSON → valid_json=false) · F⬜(custom JSON-LD needs targeting conditions)
 - 🟡 **google-analytics** (4): `/accounts` `/properties` `/data-streams` `/run-report` — R🟡(accounts) **rest⬜ (connection-gated)**
 - 🟡 **publisher-sitemaps** (1): `/settings` — R🟡 **W⬜ F⬜(news sitemap)**
 - 🟡 **woocommerce** (1): `/settings` — R🟡 **W⬜ F⬜(product schema, gate on Woo)**
@@ -148,7 +148,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 5. ✅ **Robots meta + Site identity** — R/W/E/F done (settings, robots content, templates, head robots meta, Org/Person JSON-LD). robots.txt 404 documented (test.fail). validate/optimize + U deferred.
 6. ✅ **SEO score & analyzer** — score calculate/get/latest/history + E; analyzer report/run. Score-panel U deferred.
 7. ✅ **Redirections (finish)** — 404-logs read, invalid match_type E, regex redirect 301 on front. from-404/clear skipped (mutate real logs).
-8. **Custom schema (Pro)** — create→verify→delete, custom JSON-LD F
+8. ✅ **Custom schema (Pro)** — create→listed→delete, valid_json flag. Front JSON-LD deferred (targeting conditions).
 9. **Rank tracker / Internal links / Broken links (Pro)** — write flows
 10. **Instant indexing · llms.txt · image SEO** — write + frontend
 11. **Settings-management** — export→import→restore round-trip
