@@ -21,9 +21,11 @@ export default defineConfig({
   // lose a race against a busy local backend.
   retries: process.env.CI ? 2 : 1,
   // A single local WordPress site (Herd/PHP-FPM) has limited request
-  // concurrency; too many workers saturate it and stall in-app API calls.
-  // Override with `--workers=N` or WP_WORKERS when running against a beefier host.
-  workers: process.env.WP_WORKERS ? Number(process.env.WP_WORKERS) : process.env.CI ? 2 : 3,
+  // concurrency; the React-heavy admin screens each fire several API calls on
+  // mount, so >2 workers saturate the backend and stall those calls. 2 workers
+  // runs the whole suite clean with no retries. Override with `--workers=N` or
+  // WP_WORKERS when running against a beefier host.
+  workers: process.env.WP_WORKERS ? Number(process.env.WP_WORKERS) : 2,
   reporter: 'html',
 
   use: {

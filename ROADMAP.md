@@ -121,9 +121,11 @@ green and committable.
 - **Phase 1 — Free data layer** ✅ *done*
   Fixtures (`wp-api.js` nonce auth, `seed.js`), Free REST contracts (F2–F7, F12), Security
   (F24), and Frontend output (F2/F3/F6/F7 head meta, JSON-LD, sitemap). 25 tests green.
-- **Phase 2 — Free admin UI** *(next)*
-  Admin screens load, React app mounts, and a real save persists for F2–F7; post-editor
-  metabox + focus keyword (F10); SEO score panel (F12 UI); analyzer run (F13).
+- **Phase 2 — Free admin UI** *(in progress)*
+  - ✅ Every free admin screen (Dashboard, Essential SEO, AI Tools, Usages, Settings) loads
+    without fatal error and mounts its React app.
+  - ⏳ Next: a real save persists for F2–F7; post-editor metabox + focus keyword (F10);
+    SEO score panel (F12 UI); analyzer run (F13).
 - **Phase 3 — Free tooling**
   F8, F9, F11, F15–F18, F23. Image SEO, author archives, term SEO, indexing, llms.txt,
   integrations, import/export round-trip, roles/capabilities.
