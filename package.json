@@ -1,14 +1,19 @@
 {
   "name": "thinkrank-automation",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
     "@playwright/test": "^1.61.1",
-    "@types/node": "^26.1.1"
+    "@types/node": "^26.1.1",
+    "dotenv": "^17.4.2"
   }
 }
