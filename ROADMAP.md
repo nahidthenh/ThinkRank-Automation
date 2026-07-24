@@ -132,9 +132,12 @@ green and committable.
     lane (`npm run test:editor`) since the block editor's async metabox loader starves
     under parallel load; `npm test` excludes it.
   - ⏳ Next: extend persist round-trips to F3–F7; SEO score panel (F12 UI); analyzer run (F13).
-- **Phase 3 — Free tooling**
-  F8, F9, F11, F15–F18, F23. Image SEO, author archives, term SEO, indexing, llms.txt,
-  integrations, import/export round-trip, roles/capabilities.
+- **Phase 3 — Free tooling** *(in progress)*
+  - ✅ Read contracts: image SEO (F8), author archives (F9), instant indexing (F15),
+    llms.txt settings+status (F16), integrations (F17), roles (F23), SEO analyzer (F13),
+    performance recommendations (F20).
+  - ⏳ Next: term SEO (F11); settings-management export→import round-trip (F18); llms.txt
+    generate flow.
 - **Phase 4 — Pro core** *(in progress)*
   - ✅ Portability wiring: precondition now requires Free only; Pro is detected
     (`fixtures/pro.js`) and every `@pro` spec self-skips when Pro is inactive.
