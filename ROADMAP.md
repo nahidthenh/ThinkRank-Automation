@@ -127,8 +127,11 @@ green and committable.
   - ✅ Save & persist round-trip proven for Global SEO (F2): read → save → verify persisted
     → restore original (safe, self-reverting). Same pattern extends to F3–F7 once each
     endpoint's POST contract is mapped.
-  - ⏳ Next: extend persist round-trips to F3–F7; post-editor metabox + focus keyword (F10);
-    SEO score panel (F12 UI); analyzer run (F13).
+  - ✅ Post-editor metabox (F10): block-editor loads the ThinkRank SEO metabox with its
+    focus-keyword, SEO title, and meta-description fields. Runs in an isolated `@editor`
+    lane (`npm run test:editor`) since the block editor's async metabox loader starves
+    under parallel load; `npm test` excludes it.
+  - ⏳ Next: extend persist round-trips to F3–F7; SEO score panel (F12 UI); analyzer run (F13).
 - **Phase 3 — Free tooling**
   F8, F9, F11, F15–F18, F23. Image SEO, author archives, term SEO, indexing, llms.txt,
   integrations, import/export round-trip, roles/capabilities.

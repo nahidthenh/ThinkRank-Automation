@@ -4,7 +4,9 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "playwright test",
+    "test": "playwright test --grep-invert @editor",
+    "test:editor": "playwright test --grep @editor --workers=1",
+    "test:all": "npm run test && npm run test:editor",
     "report": "playwright show-report"
   },
   "keywords": [],
