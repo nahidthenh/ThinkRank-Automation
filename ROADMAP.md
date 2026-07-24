@@ -142,8 +142,12 @@ green and committable.
     Pro "License" menu item present.
   - ✅ Redirections CRUD + a real 301 on the front end (create → list → 301 → toggle off
     → delete), with a self-cleaning sweep of `/tr-e2e-*` redirects.
-- **Phase 5 — Pro features**
-  Broken links, internal links, local SEO (+LocalBusiness schema), rank tracker, custom schema.
+- **Phase 5 — Pro features** *(in progress)*
+  - ✅ Local SEO: Locations CRUD round-trip (create → listed → delete), self-cleaning.
+  - ✅ Read contracts for Broken Links, Internal Links (post-types/posts), Rank Tracker
+    (keywords/suggestions), Custom Schema (entries/targets), Top Content.
+  - ⏳ Next: write round-trips for custom schema entries; LocalBusiness schema on the front;
+    broken-link scan flow; internal-link suggestion apply.
 - **Phase 6 — Long tail**
   Analytics, AI tools, migration, wizard, WooCommerce, GA/Search Console, advanced sitemaps.
 - **Phase 7 — Hardening**

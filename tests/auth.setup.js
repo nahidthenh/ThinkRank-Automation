@@ -49,13 +49,14 @@ setup('authenticate as WordPress admin', async ({ page }) => {
 
   fs.mkdirSync(path.dirname(AUTH_FILE), { recursive: true });
 
-  await page.goto(`${WP_URL}/wp-login.php`);
+  await page.goto(`${WP_URL}/wp-login.php`, { waitUntil: 'domcontentloaded' });
   await page.fill('#user_login', ADMIN_USER);
   await page.fill('#user_pass', ADMIN_PASS);
   await page.click('#wp-submit');
 
-  // Successful login lands on wp-admin
-  await expect(page).toHaveURL(/wp-admin/, { timeout: 15_000 });
+  // Successful login lands on wp-admin. Generous timeout — the local backend
+  // can be slow to redirect while under parallel load.
+  await expect(page).toHaveURL(/wp-admin/, { timeout: 45_000 });
 
   await page.context().storageState({ path: AUTH_FILE });
 });
