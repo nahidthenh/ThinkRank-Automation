@@ -155,10 +155,18 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 11. **Settings-management** — export→import→restore round-trip
 12. **AI tools** — generation endpoints (graceful no-key), content-brief generate
 13. **Migration / Setup wizard** — multi-step flows
-14. **Analytics / seo-analytics / performance / GA (Pro)** — remaining reads
-15. **MCP · metadata · focus-keyword-usage · keywords (Pro) · schema import-file**
-16. **Cross-cutting** — role/authz matrix, security on all writes, frontend value
-    correctness, cross-browser, CI validation.
+14. ✅ **Analytics / seo-analytics / performance** — remaining reads covered.
+15. ✅ **MCP (connection) · metadata · focus-keyword-usage · keywords (Pro)** — reads/E covered.
+    (schema import-file, MCP connect/oauth flows deferred — mutating/auth.)
+16. 🟡 **Cross-cutting** — ✅ role/authz matrix (editor rejected on manage writes);
+    ⏳ security on ALL writes, frontend value correctness, cross-browser, CI validation.
+
+### Deferred by request (destructive / external-dependency)
+- settings-management `reset/restore/import` (could wipe all settings)
+- AI generation endpoints (need a real API key)
+- migration `import/migrate` + setup-wizard `complete/install-plugins` (mutate the site)
+- broken-links `scan` + item actions, instant-indexing `submit`, sitemap `submit/ping`,
+  llms-txt `generate`, image-seo `media-alt/run` (external calls / persistent side effects)
 
 ## 9. Definition of done (per feature)
 
