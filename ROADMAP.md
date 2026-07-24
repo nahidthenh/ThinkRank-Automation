@@ -3,187 +3,165 @@
 Playwright end-to-end coverage for **ThinkRank Free** and **ThinkRank Pro**, run
 against any live WordPress site that has the plugins active.
 
+This is the **master coverage tracker** — every feature (all 201 REST routes +
+admin screens + frontend output) is listed with the test dimensions it needs.
+We work through it **feature by feature, deeply** (not one smoke test per area).
+
 ---
 
 ## 1. Principles
 
-1. **Site-agnostic.** Nothing is hardcoded. The target site is `WP_URL` in `.env`.
-   Delete `thinkrank.test` and point at any site with ThinkRank — tests are unchanged.
-2. **Self-seeding.** Tests create the data they need (posts, terms, settings) via the
-   WP/ThinkRank REST API in setup, assert, then clean up. Never assume pre-existing content.
-3. **Free vs Pro gating.** Free tests run on any ThinkRank site. Pro tests **auto-skip**
-   when `thinkrank-pro/v1` is not active, so the same suite is honest on a Free-only site.
-4. **Two layers per feature.** API layer (fast, checks contracts) + UI layer (checks the
-   admin screen renders, saves, and reflects state). Prefer API for data setup, UI for behavior.
-5. **No destructive writes on shared/production sites.** Every write is scoped to test
-   fixtures and reverted in teardown.
+1. **Site-agnostic.** Nothing hardcoded; the target is `WP_URL` in `.env`.
+2. **Self-seeding & self-restoring.** Tests create their own posts/terms/data and
+   remove them; settings writes snapshot → change → verify → restore.
+3. **Free vs Pro gating.** Free runs anywhere; `@pro` specs self-skip when Pro is inactive.
+4. **Assert contracts + behavior**, not brittle marketing copy.
+5. **No destructive writes** on shared/production sites — everything reverts.
 
----
+## 2. Test dimensions (what "deep" means per feature)
 
-## 2. Test layers
+For each feature we aim to cover every applicable dimension:
 
-| Layer | What it proves | Speed |
-|-------|----------------|-------|
-| **Setup / precondition** | Site reachable, Free active (required), Pro active (else skip Pro), admin login works | — |
-| **API** (`tests/api/`) | Each REST endpoint: auth required, correct status, response shape, GET/POST round-trip | fast |
-| **UI feature** (`tests/free/`, `tests/pro/`) | Admin page loads, React app mounts, settings save & persist, controls work | medium |
-| **Frontend output** (`tests/frontend/`) | Rendered `<head>` meta, JSON-LD schema, sitemap XML, robots.txt on public pages | medium |
-| **E2E flows** (`tests/flows/`) | Multi-step journeys (e.g. set focus keyword → score updates → meta appears on front) | slow |
+| Code | Dimension | Meaning |
+|------|-----------|---------|
+| **R** | Read contract | GET endpoints: auth required, status, response shape |
+| **W** | Write round-trip | POST/PUT/DELETE: change persists, then restore/delete |
+| **E** | Edge & errors | missing/invalid params → 4xx, disabled toggle, empty data, boundaries |
+| **A** | Authz / roles | admin allowed; non-admin (editor/author) rejected; unauth → 401/403 |
+| **U** | Admin UI | screen mounts, form fills, save via UI, tab switching, live update |
+| **F** | Frontend | public output correct for the configured value (meta/schema/xml/redirect) |
 
-### Proposed directory layout
+Status legend: ✅ deep · 🟡 partial (contract/smoke only) · ⬜ none
+
+## 3. Test layers & layout
+
 ```
 tests/
-  auth.setup.js            # login + Free(required)/Pro(optional) precondition
-  fixtures/
-    wp-api.js              # authed REST client, nonce handling
-    seed.js                # create/delete posts, terms, reset settings
-  api/                     # REST contract tests (free + pro, tagged)
-  free/                    # Free admin UI feature tests
-  pro/                     # Pro admin UI feature tests (tagged @pro, auto-skip)
-  frontend/                # public-facing output
-  flows/                   # end-to-end journeys
+  auth.setup.js            login + Free(required)/Pro(optional) precondition
+  fixtures/                wp-api.js (nonce REST) · seed.js · pro.js
+  api/                     REST contract + behavior specs
+  free/                    free admin UI + write flows
+  frontend/                public output
+  pro/                     pro API + UI
+  flows/                   multi-step journeys (to add)
 ```
-
-### Tagging & running subsets
-Tag every test `@free` or `@pro` (plus `@api`/`@ui` optionally).
-```
-npm test                       # everything (Pro tests skip if Pro inactive)
-npx playwright test --grep @free
-npx playwright test --grep @pro
-npx playwright test tests/api  # contract layer only
-```
+Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 
 ---
 
-## 3. Coverage matrix — FREE
+## 4. FREE feature coverage (31 areas · 153 routes)
 
-Feature areas map 1:1 to the plugin's REST endpoints + admin screens.
+> Each line: **area** (route count) — dimensions to cover — current status.
 
-| # | Feature area | API | UI | Frontend | Priority |
-|---|--------------|-----|----|----|----------|
-| F1 | Dashboard | — | ✅ mounts, widgets load | — | P0 ✅ done |
-| F2 | Global SEO (Essential SEO) | ✅ GET/POST settings per post_type | ✅ save & persist | ✅ title/desc/OG in `<head>` | P1 |
-| F3 | Global Robots Meta | ✅ settings round-trip | ✅ toggles save | ✅ `<meta robots>` output | P1 |
-| F4 | Site Identity | ✅ settings | ✅ save | ✅ org/person schema | P1 |
-| F5 | Social (media + platforms) | ✅ settings | ✅ save | ✅ OG/Twitter tags | P1 |
-| F6 | Schema (basic) | ✅ settings per type | ✅ save | ✅ JSON-LD present | P1 |
-| F7 | Sitemap | ✅ settings | ✅ toggles | ✅ `sitemap.xml` valid & reachable | P1 |
-| F8 | Image SEO | ✅ settings | ✅ save | ✅ alt/title applied | P2 |
-| F9 | Author Archives | ✅ settings | ✅ save | ✅ archive noindex honored | P2 |
-| F10 | Post SEO metabox / focus keyword | ✅ get/update post SEO + checks | ✅ metabox in editor, keyword input | ✅ meta on that post | P1 |
-| F11 | Term SEO | ✅ get/update term SEO + checks | ✅ term edit screen | ✅ meta on term archive | P2 |
-| F12 | SEO Score | ✅ score endpoint returns 0–100 + checks | ✅ score panel renders | — | P1 |
-| F13 | SEO Analyzer | ✅ run + get analyzer | ✅ run from UI, results render | — | P2 |
-| F14 | SEO Analytics | ✅ analytics data | ✅ charts render | — | P3 |
-| F15 | Instant Indexing | ✅ settings + submit URLs (mock/guard) | ✅ settings save | — | P2 |
-| F16 | LLMs.txt | ✅ settings + generate + status | ✅ generate from UI | ✅ `/llms.txt` reachable | P2 |
-| F17 | Integrations | ✅ settings + test-connections | ✅ connect/disconnect UI | — | P2 |
-| F18 | Settings Mgmt (import/export) | ✅ export → import round-trip | ✅ export/import buttons | — | P2 |
-| F19 | AI Content Tools (brief, pillar) | ✅ generate brief, pillar content | ✅ tools screen | — | P3 |
-| F20 | Performance / Usage analytics | ✅ endpoints respond | ✅ screens render | — | P3 |
-| F21 | Migration (Yoast/RankMath) | ✅ detect sources, run import | ✅ migration screen | — | P3 |
-| F22 | Setup Wizard | — | ✅ wizard steps complete | — | P3 |
-| F23 | Roles / Capabilities | ✅ role-manager endpoint | ✅ non-admin access denied | — | P2 |
-| F24 | Security (all write endpoints) | ✅ unauth POST → 401/403 | — | — | P1 |
+### Core SEO settings
+- ⬜🟡 **global-seo** (3): `/settings` `/settings/all` `/settings/reset` — R✅ W✅(title) **E⬜ A⬜ U⬜ F⬜(title/desc/schema in head)** · deepen: all/reset, per-post-type, UI save
+- 🟡 **global-robot-meta** (1): `/settings` — R✅ **W⬜ E⬜ U⬜ F⬜(`<meta robots>` reflects toggles)**
+- 🟡 **site-identity** (10): `/settings` `/robots` `/validate` `/optimize` `/title/*` `/breadcrumbs/*` `/ai-optimize-*` — R🟡(settings) **W⬜ E⬜ U⬜ F⬜(org/person schema, breadcrumbs)**
+- 🟡 **social-media** (7): `/settings` `/preview` `/validate` `/generate-og` `/generate-twitter` `/optimize-image` `/{ctx}/{id}` — R🟡 **W⬜ E⬜ U⬜ F⬜(OG/Twitter tags)**
+- 🟡 **social-platforms** (1): `/settings` — R✅ **W⬜ U⬜**
+- 🟡 **schema** (13): `/settings` `/types` `/generate` `/validate` `/preview` `/deploy` `/deployed` `/bulk` `/optimize` `/import` `/enable-for-post` `/{ctx}/{id}` `/performance/{ctx}/{id}` — R🟡(settings) **W⬜ E⬜ U⬜ F⬜(JSON-LD types)**
+- 🟡 **sitemap** (11): `/settings` `/generate` `/validate` `/status` `/stats` `/ping` `/submit` `/cleanup` `/custom-post-types` `/robots-urls` `/woocommerce-status` — R🟡(settings) F🟡(index xml) **W⬜ E⬜ U⬜ F⬜(per-type sitemaps, robots.txt urls)**
+- 🟡 **image-seo** (3): `/settings` `/media-alt/run` `/media-alt/stats` — R✅ **W⬜ E⬜ U⬜ F⬜(alt/title applied)**
+- 🟡 **author-archives** (1): `/settings` — R✅ **W⬜ E⬜ F⬜(archive noindex honored)**
+- ⬜ **metadata** (1): `/metadata/{post_id}` — **R⬜ W⬜** (per-post SEO meta get/update)
+- ⬜ **focus-keyword-usage** (1): `/focus-keyword-usage` — **R⬜**
 
----
+### SEO scoring & analysis
+- 🟡 **seo-score** (4): `/calculate` `/get` `/latest` `/history` — R✅ W✅(calc) **E⬜(bad post_id) U⬜(score panel) history/latest⬜**
+- 🟡 **seo-analyzer** (2): `/seo-analyzer` `/run` — R✅ **W⬜(run) U⬜**
+- 🟡 **performance** (6): `/recommendations` `/opportunities` `/diagnostics` `/history` `/monitor` `/collect` — R🟡(recs) **rest⬜ U⬜**
+- 🟡 **seo-analytics** (14): `/status` `/dashboard` `/insights` `/opportunities` `/branded` `/countries` `/indexing-status` `/intelligent-*` `/search-daily` `/search-totals` `/refresh` `/setup/search-console` `/test-connections` — R🟡(status/dash) **rest⬜ E⬜**
+- ⬜ **analytics** (3): `/overview` `/usage` `/costs` — **R⬜**
 
-## 4. Coverage matrix — PRO
+### AI & content
+- ⬜ **ai** (10): `/status` `/providers` `/test-connection` `/analyze-content` `/generate-metadata` `/improve-title` `/improve-meta-description` `/add-dofollow-link` `/add-keyword-paragraph` `/explain-suggestion` — R🟡(status/providers) **generation endpoints⬜ E⬜(no key → graceful)**
+- 🟡 **content-brief** (4): `/list` `/generate` `/{id}` `/{id}/export` — R🟡(list) **W⬜(generate) E⬜**
+- ⬜ **pillar-content** (1): `/suggestions` — **R⬜**
 
-All Pro tests tagged `@pro`; auto-skip when `thinkrank-pro/v1` is inactive.
+### Indexing, llms, integrations
+- 🟡 **instant-indexing** (5): `/settings` `/history` `/post-types` `/submit` `/regenerate-key` — R✅(settings) **W⬜ history/post-types⬜ submit⬜(guard external) E⬜**
+- 🟡 **llms-txt** (7): `/settings` `/status` `/generate` `/validate` `/overview` `/ai-optimize` `/optimization-results` — R🟡(settings/status) **W⬜(generate) F⬜(`/llms.txt`) E⬜**
+- 🟡 **integrations** (6): `/settings` `/test-connections` `/detect-ga4-conflicts` `/verify-ga4-tracking` `/search-console/sites` `/google/disconnect` — R🟡(settings) **rest⬜ W⬜**
 
-| # | Feature area | API | UI | Frontend | Priority |
-|---|--------------|-----|----|----|----------|
-| P0 | Pro activation & license | ✅ `thinkrank-pro/v1` namespace present; license status endpoint | ✅ License screen, Pro menu items visible | — | P1 |
-| P1 | Redirections | ✅ CRUD a redirect via endpoint | ✅ add/edit/delete in UI | ✅ 301 actually redirects on front | P1 |
-| P2 | Broken Links | ✅ scan + list endpoint | ✅ scanner UI, results table | — | P2 |
-| P3 | Internal Links | ✅ suggestions endpoint | ✅ suggestions in editor/screen | — | P2 |
-| P4 | Local SEO (locations) | ✅ locations CRUD | ✅ location editor | ✅ LocalBusiness schema on front | P2 |
-| P5 | Rank Tracker (keywords) | ✅ keywords CRUD + tracking data | ✅ tracker UI | — | P2 |
-| P6 | Custom Schema | ✅ custom schema CRUD + file import | ✅ schema builder UI | ✅ custom JSON-LD on front | P2 |
-| P7 | Advanced Sitemaps | ✅ pro sitemap settings/endpoint | ✅ settings | ✅ extra sitemaps reachable | P3 |
-| P8 | WooCommerce SEO | ✅ woo endpoint (skip if Woo inactive) | ✅ product SEO fields | ✅ product schema | P3 |
-| P9 | Google Analytics / Search Console | ✅ GA + URL inspection endpoints | ✅ connect flow (mock) | — | P3 |
-| P10 | Top Content | ✅ top-content endpoint | ✅ report renders | — | P3 |
+### Data, wizard, admin, system
+- ⬜ **settings-management** (10): `/export` `/import` `/backup` `/restore` `/reset` `/validate` `/global` `/schema` `/category/{cat}` `/maintenance/performance-indexes` — **export→import round-trip⬜ E⬜** (methods are POST)
+- 🟡 **setup-wizard** (8): `/state` `/step` `/complete` `/consent` `/install-plugins` `/deactivate-plugin` `/migrated-plugins` `/migrated-site-data` — R🟡(state) **rest⬜ U⬜(wizard flow)**
+- 🟡 **import** (migration) (6): `/snapshots` `/snapshot` `/detect` `/migrate` `/export` `/cleanup` — R🟡(snapshots) **W⬜(detect/migrate flow) U⬜**
+- 🟡 **email-report** (2): `/config` `/test-send` — R🟡(config) **W⬜ E⬜**
+- 🟡 **role-manager** (1): `/role-manager` — R✅ **W⬜ A⬜(non-admin denied)**
+- ⬜ **mcp** (7): `/mcp` `/connect` `/connection` `/disconnect` `/rotate` `/oauth/register` `/oauth/token` — **R⬜ W⬜ A⬜**
+- ⬜ **settings** (1): `/settings` — **R⬜**
+- 🟡 **capabilities** (1) · 🟡 **plugin-info** (1) · 🟡 **system-status** (1) — R✅
 
-> WooCommerce (P8) further gates on WooCommerce being active — skip otherwise.
+### Cross-cutting (free)
+- 🟡 **Security**: unauth → 401/403 — done for 5 endpoints; **extend to all write endpoints**
+- ⬜ **Authz/roles**: non-admin (editor/author/contributor) rejected on manage endpoints
+- 🟡 **Frontend**: homepage+post meta, JSON-LD, sitemap index — **extend: robots meta values, canonical correctness, per-config schema, robots.txt, llms.txt**
 
 ---
 
-## 5. Phased rollout
+## 5. PRO feature coverage (15 areas · 48 routes)
 
-Sliced **API-first**: the data/contract + public-output layers land first (fast, fully
-verifiable over HTTP), then the admin UI feature tests, then Pro. Each phase is independently
-green and committable.
-
-- **Phase 0 — Foundation** ✅ *done*
-  Config (env-driven, HTTPS, worker cap), auth + Free/Pro precondition, smoke, dashboard mount.
-- **Phase 1 — Free data layer** ✅ *done*
-  Fixtures (`wp-api.js` nonce auth, `seed.js`), Free REST contracts (F2–F7, F12), Security
-  (F24), and Frontend output (F2/F3/F6/F7 head meta, JSON-LD, sitemap). 25 tests green.
-- **Phase 2 — Free admin UI** *(in progress)*
-  - ✅ Every free admin screen (Dashboard, Essential SEO, AI Tools, Usages, Settings) loads
-    without fatal error and mounts its React app.
-  - ✅ Save & persist round-trip proven for Global SEO (F2): read → save → verify persisted
-    → restore original (safe, self-reverting). Same pattern extends to F3–F7 once each
-    endpoint's POST contract is mapped.
-  - ✅ Post-editor metabox (F10): block-editor loads the ThinkRank SEO metabox with its
-    focus-keyword, SEO title, and meta-description fields. Runs in an isolated `@editor`
-    lane (`npm run test:editor`) since the block editor's async metabox loader starves
-    under parallel load; `npm test` excludes it.
-  - ⏳ Next: extend persist round-trips to F3–F7; SEO score panel (F12 UI); analyzer run (F13).
-- **Phase 3 — Free tooling** *(in progress)*
-  - ✅ Read contracts: image SEO (F8), author archives (F9), instant indexing (F15),
-    llms.txt settings+status (F16), integrations (F17), roles (F23), SEO analyzer (F13),
-    performance recommendations (F20).
-  - ⏳ Next: term SEO (F11); settings-management export→import round-trip (F18); llms.txt
-    generate flow.
-- **Phase 4 — Pro core** *(in progress)*
-  - ✅ Portability wiring: precondition now requires Free only; Pro is detected
-    (`fixtures/pro.js`) and every `@pro` spec self-skips when Pro is inactive.
-  - ✅ Activation/license: license REST endpoint responds, License admin screen mounts,
-    Pro "License" menu item present.
-  - ✅ Redirections CRUD + a real 301 on the front end (create → list → 301 → toggle off
-    → delete), with a self-cleaning sweep of `/tr-e2e-*` redirects.
-- **Phase 5 — Pro features** *(in progress)*
-  - ✅ Local SEO: Locations CRUD round-trip (create → listed → delete), self-cleaning.
-  - ✅ Read contracts for Broken Links, Internal Links (post-types/posts), Rank Tracker
-    (keywords/suggestions), Custom Schema (entries/targets), Top Content.
-  - ⏳ Next: write round-trips for custom schema entries; LocalBusiness schema on the front;
-    broken-link scan flow; internal-link suggestion apply.
-- **Phase 6 — Long tail** *(in progress)*
-  - ✅ Free: SEO analytics (F14), AI status/providers + content briefs (F19), migration
-    snapshots (F21), setup-wizard state (F22), email report, system/plugin/capabilities.
-  - ✅ Pro: publisher/advanced sitemaps (P7), WooCommerce settings (P8), Google Analytics
-    accounts (P9). Connection-dependent endpoints asserted tolerantly for portability.
-  - ⏳ Next: URL inspection (returns 403 — needs capability/connection investigation);
-    write flows for migration import and AI generation.
-- **Phase 7 — Hardening** *(in progress)*
-  - ✅ CI wiring: GitHub Actions workflow (`.github/workflows/e2e.yml`) stands up ephemeral
-    WordPress via `wp-env` (`.wp-env.json`), builds + installs Free & Pro, runs the suite.
-    Needs the `THINKRANK_TOKEN` secret and a first validation run.
-  - ⏳ Next: frontend regression snapshots, cross-browser (firefox/webkit), flake triage.
+- ✅ **redirections** (7): `/redirections`(GET/POST) `/{id}`(POST/DELETE) `/{id}/toggle` `/404-logs` `/404-logs/{id}` `/404-logs/clear` `/from-404` — CRUD+301+toggle✅ **404-logs⬜ from-404⬜ regex/match-types E⬜ F(regex redirect)⬜**
+- ✅ **locations** (2): `/locations` `/{id}` — CRUD✅ **update(POST /{id})⬜ E⬜ U⬜ F⬜(LocalBusiness schema)**
+- 🟡 **license** (6): `/get-license` `/activate` `/deactivate` `/delete-license` `/resend-otp` `/submit-otp` — R🟡(get) U🟡(screen) **activate/deactivate flow⬜ E⬜**
+- 🟡 **broken-links** (8): `/broken-links` `/scan` `/{id}` `/{id}/dismiss` `/{id}/edit` `/{id}/recheck` `/{id}/restore` `/{id}/unlink` — R🟡(list) **scan flow⬜ item actions⬜ E⬜**
+- 🟡 **internal-links** (4): `/post-types` `/posts` `/suggest` `/apply` — R🟡(types/posts) **suggest⬜ apply⬜ E⬜**
+- 🟡 **rank-tracker** (5): `/keywords`(GET/POST) `/keywords/{hash}` `/suggestions` `/history` `/refresh` — R🟡(kw/sugg) **add/delete keyword W⬜ history⬜ refresh⬜**
+- 🟡 **custom-schema** (3): `/entries`(GET/POST) `/entries/{id}` `/targets` — R🟡(entries/targets) **create→verify→delete W⬜ F⬜(custom JSON-LD)**
+- 🟡 **google-analytics** (4): `/accounts` `/properties` `/data-streams` `/run-report` — R🟡(accounts) **rest⬜ (connection-gated)**
+- 🟡 **publisher-sitemaps** (1): `/settings` — R🟡 **W⬜ F⬜(news sitemap)**
+- 🟡 **woocommerce** (1): `/settings` — R🟡 **W⬜ F⬜(product schema, gate on Woo)**
+- 🟡 **top-content** (1): `/top-content` — R🟡
+- ⬜ **keywords** (2): `/top-queries` `/winning-losing` — **R⬜**
+- 🟡 **url-inspection** (2): `/status` `/batch-inspect` — investigated (⚠ **403 bug** on site_error — file to `thinkrank-pro`) **R⬜ proper-status⬜**
+- ⬜ **schema/import-file** (1): `/schema/import-file` — **W⬜**
+- 🟡 **Pro precondition/menu**: license screen + menu ✅
 
 ---
 
-## 6. Conventions
+## 6. Admin screens (UI mount + interaction)
 
-- **Fixtures over assumptions.** Use `fixtures/seed.js` to create a known post/term,
-  return its ID, and delete it in `afterAll`/`afterEach`.
-- **Settings safety.** Snapshot a settings group before a save test, restore after, so
-  runs are idempotent and safe on staging.
-- **Skip, don't fail, for missing capabilities.** Pro-inactive → skip `@pro`.
-  Woo-inactive → skip Woo. Third-party keys missing → skip external-call tests.
-- **Assert contracts, not exact copy.** Check status codes, response shape, and presence
-  of meta/schema — avoid brittle assertions on marketing text that changes between versions.
-- **One feature per file**, named after the area (`free/global-seo.spec.js`, `pro/redirections.spec.js`).
+- 🟡 dashboard · essential-seo · ai-tools · usages · settings — **mount ✅; interaction (tabs, forms, save) ⬜**
+- 🟡 pro **license** — mount ✅
+- ⬜ **migration** screen · **setup-wizard** flow
+
+## 7. Frontend outputs (F)
+
+- 🟡 head meta (robots/canonical/OG/Twitter) presence — **value correctness ⬜**
+- 🟡 JSON-LD present — **type/shape per schema config ⬜**
+- 🟡 sitemap index xml — **per-type sitemaps, lastmod, woo ⬜**
+- ⬜ robots.txt · llms.txt · breadcrumbs · redirect (regex) · LocalBusiness/product schema
 
 ---
 
-## 7. Definition of done (per feature)
+## 8. Execution order (feature by feature, deep)
 
-A feature area is "covered" when it has:
-1. An **API contract test** (auth + shape + round-trip where writable).
-2. A **UI test** (screen loads, app mounts, a real save persists).
-3. A **frontend assertion** *if* the feature emits public output (meta/schema/sitemap/redirect).
-4. Fixtures that leave the site in its original state.
+Work top-down; each feature = one comprehensive spec covering its R/W/E/A/U/F
+dimensions, self-cleaning, verified green before commit. Proposed priority
+(highest user-facing value + write surface first):
+
+1. **Global SEO** (finish: all/reset, per-type, UI save, head-output F, E)
+2. **Sitemap** (settings W, generate/validate/status, per-type xml F, robots urls)
+3. **Schema** (types/generate/validate/deploy, per-context, JSON-LD F)
+4. **Social** (settings W, generate-og/twitter, OG/Twitter tag F)
+5. **Robots meta + Site identity** (W, head robots F, breadcrumbs/org schema F)
+6. **SEO score & analyzer** (calculate/run, history, score panel U, E)
+7. **Redirections (finish)** — 404-logs, from-404, regex match, regex redirect F
+8. **Custom schema (Pro)** — create→verify→delete, custom JSON-LD F
+9. **Rank tracker / Internal links / Broken links (Pro)** — write flows
+10. **Instant indexing · llms.txt · image SEO** — write + frontend
+11. **Settings-management** — export→import→restore round-trip
+12. **AI tools** — generation endpoints (graceful no-key), content-brief generate
+13. **Migration / Setup wizard** — multi-step flows
+14. **Analytics / seo-analytics / performance / GA (Pro)** — remaining reads
+15. **MCP · metadata · focus-keyword-usage · keywords (Pro) · schema import-file**
+16. **Cross-cutting** — role/authz matrix, security on all writes, frontend value
+    correctness, cross-browser, CI validation.
+
+## 9. Definition of done (per feature)
+
+A feature is **deeply covered** when its applicable **R/W/E/A/U/F** dimensions all
+have passing specs, writes self-restore, error/edge and (where relevant) non-admin
+paths are asserted, and any public output is verified for the configured value —
+not just presence.
