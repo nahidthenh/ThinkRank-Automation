@@ -61,7 +61,7 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - ✅ **social-platforms** (1): `/settings` — R✅
 - ✅ **schema** (13): `/settings` `/types` `/generate` `/validate` `/preview` `/deploy` `/deployed` `/bulk` `/optimize` `/import` `/enable-for-post` `/{ctx}/{id}` `/performance/{ctx}/{id}` — R✅(settings/types/deployed/per-post) W✅(settings save + generate) E✅(generate/preview/settings→400) F✅(post JSON-LD `@type`) · not run: deploy/bulk/optimize/import · U⬜
 - ✅ **sitemap** (11): `/settings` `/generate` `/validate` `/status` `/stats` `/ping` `/submit` `/cleanup` `/custom-post-types` `/robots-urls` `/woocommerce-status` — R✅(status/stats/settings/cpt/robots-urls/woo) W✅(generate XML + settings save) E✅(empty→400) validate✅ F✅(index + per-type xml) · not run: submit/ping (external), cleanup · U⬜
-- 🟡 **image-seo** (3): `/settings` `/media-alt/run` `/media-alt/stats` — R✅ **W⬜ E⬜ U⬜ F⬜(alt/title applied)**
+- ✅ **image-seo** (3): `/settings` `/media-alt/run` `/media-alt/stats` — R✅(settings/stats) W✅(settings round-trip) · not run: media-alt/run (mutates media) · F⬜
 - 🟡 **author-archives** (1): `/settings` — R✅ **W⬜ E⬜ F⬜(archive noindex honored)**
 - ⬜ **metadata** (1): `/metadata/{post_id}` — **R⬜ W⬜** (per-post SEO meta get/update)
 - ⬜ **focus-keyword-usage** (1): `/focus-keyword-usage` — **R⬜**
@@ -79,8 +79,8 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - ⬜ **pillar-content** (1): `/suggestions` — **R⬜**
 
 ### Indexing, llms, integrations
-- 🟡 **instant-indexing** (5): `/settings` `/history` `/post-types` `/submit` `/regenerate-key` — R✅(settings) **W⬜ history/post-types⬜ submit⬜(guard external) E⬜**
-- 🟡 **llms-txt** (7): `/settings` `/status` `/generate` `/validate` `/overview` `/ai-optimize` `/optimization-results` — R🟡(settings/status) **W⬜(generate) F⬜(`/llms.txt`) E⬜**
+- ✅ **instant-indexing** (5): `/settings` `/history` `/post-types` `/submit` `/regenerate-key` — R✅(settings/history/post-types) W✅(settings save persists) · not run: submit (external), regenerate-key
+- ✅ **llms-txt** (7): `/settings` `/status` `/generate` `/validate` `/overview` `/ai-optimize` `/optimization-results` — R✅(settings/status/overview) W✅(settings save) E✅(empty→400) · not run: generate (persistent file), F(`/llms.txt`)⬜
 - 🟡 **integrations** (6): `/settings` `/test-connections` `/detect-ga4-conflicts` `/verify-ga4-tracking` `/search-console/sites` `/google/disconnect` — R🟡(settings) **rest⬜ W⬜**
 
 ### Data, wizard, admin, system
@@ -150,7 +150,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 7. ✅ **Redirections (finish)** — 404-logs read, invalid match_type E, regex redirect 301 on front. from-404/clear skipped (mutate real logs).
 8. ✅ **Custom schema (Pro)** — create→listed→delete, valid_json flag. Front JSON-LD deferred (targeting conditions).
 9. ✅ **Rank tracker / Internal links (Pro)** — rank-tracker add→list→delete (poll-hardened) + reads; internal-links suggest + reads. Broken-links write flows (scan/item actions) deferred (mutate real data).
-10. **Instant indexing · llms.txt · image SEO** — write + frontend
+10. ✅ **Instant indexing · llms.txt · image SEO** — reads + settings save round-trips (snapshot/restore) + llms empty→400. submit/generate/media-run skipped (external/persistent/mutating).
 11. **Settings-management** — export→import→restore round-trip
 12. **AI tools** — generation endpoints (graceful no-key), content-brief generate
 13. **Migration / Setup wizard** — multi-step flows

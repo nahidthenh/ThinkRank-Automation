@@ -44,3 +44,20 @@ suite. Not yet filed. Repo routing: free → `WPDevelopers/thinkrank`, pro →
   whether the physical file is written by the plugin vs. a migration/import step.
 - **Note:** Partly environment-dependent (nginx/Herd static handling) — confirm on a
   standard install before filing.
+
+## 3. [Low] Settings-save endpoints silently wipe fields on an empty/partial payload
+
+- **Repo:** thinkrank (free)
+- **Where:** `includes/api/class-instant-indexing-endpoint.php` `update_settings()` (and
+  `image-seo` settings save behave the same way).
+- **What:** `POST /wp-json/thinkrank/v1/instant-indexing/settings` with an empty body `{}`
+  returns **200** and **overwrites** stored settings with defaults/empties — e.g.
+  `auto_submit_post_types` goes from `["post"]` to `[]` — because the handler reads each
+  param with a default (`isset($params['auto_submit_post_types']) ? … : []`) and replaces
+  the whole option. There is no "settings required" guard (unlike `llms-txt`, which returns
+  400 on empty). A partial/empty save silently drops configuration.
+- **Impact:** Low — a malformed or partial client request can quietly reset config. Prefer
+  merging with existing settings, or requiring a non-empty payload (return 400 like llms-txt).
+- **Repro:** `POST instant-indexing/settings {}` → 200; then `GET` shows
+  `auto_submit_post_types: []`.
+- **Severity:** Low (data-integrity footgun, not a security issue).
