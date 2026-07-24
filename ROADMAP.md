@@ -124,7 +124,10 @@ green and committable.
 - **Phase 2 — Free admin UI** *(in progress)*
   - ✅ Every free admin screen (Dashboard, Essential SEO, AI Tools, Usages, Settings) loads
     without fatal error and mounts its React app.
-  - ⏳ Next: a real save persists for F2–F7; post-editor metabox + focus keyword (F10);
+  - ✅ Save & persist round-trip proven for Global SEO (F2): read → save → verify persisted
+    → restore original (safe, self-reverting). Same pattern extends to F3–F7 once each
+    endpoint's POST contract is mapped.
+  - ⏳ Next: extend persist round-trips to F3–F7; post-editor metabox + focus keyword (F10);
     SEO score panel (F12 UI); analyzer run (F13).
 - **Phase 3 — Free tooling**
   F8, F9, F11, F15–F18, F23. Image SEO, author archives, term SEO, indexing, llms.txt,
