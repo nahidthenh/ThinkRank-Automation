@@ -10,8 +10,14 @@ dotenv.config({ quiet: true });
 // site that has ThinkRank Free + Pro active by editing WP_URL in .env.
 const WP_URL = process.env.WP_URL || 'https://thinkrank.test';
 
-// Slack reporter — only added when SLACK_BOT_TOKEN is set (see .env / CI secrets).
-// Posts a run summary to the configured Slack channel(s).
+// Slack reporter — posts a run summary to the configured channel(s).
+// Enabled only when a token is set AND we're in CI (or SLACK_REPORT=1 is passed),
+// so routine LOCAL runs stay quiet and don't spam the channel. To post from a
+// local run on purpose: `SLACK_REPORT=1 npm test` (or `npm run test:slack`).
+const slackEnabled =
+  Boolean(process.env.SLACK_BOT_TOKEN) &&
+  (Boolean(process.env.CI) || process.env.SLACK_REPORT === '1');
+
 const slackReporter = [
   './node_modules/playwright-slack-report/dist/src/SlackReporter.js',
   {
@@ -49,7 +55,7 @@ export default defineConfig({
   reporter: [
     process.env.CI ? ['github'] : ['list'],
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
-    ...(process.env.SLACK_BOT_TOKEN ? [slackReporter] : []),
+    ...(slackEnabled ? [slackReporter] : []),
   ],
 
   use: {
