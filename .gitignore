@@ -1,7 +1,7 @@
 # Dependencies
 node_modules/
 
-# Environment — contains DB passwords, do not commit
+# Environment — contains site URL + admin credentials, do not commit
 .env
 
 # Playwright test output (generated at runtime)
@@ -10,9 +10,6 @@ test-results/html-report/
 test-results/.auth/
 test-results/playwright-results.json
 test-results/plugin-manifest.json
-test-results/results.xml
-test-results/phpunit-output.txt
-test-results/exit-code.txt
 test-results/last-report.md
 
 # Keep the directory itself
@@ -20,10 +17,6 @@ test-results/last-report.md
 
 # Playwright browser binaries cache
 /playwright/.cache/
-
-# Docker volumes (managed by Docker, not git)
-db_data/
-wp_uploads/
 
 # OS files
 .DS_Store
