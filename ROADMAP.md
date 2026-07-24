@@ -59,7 +59,7 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - 🟡 **site-identity** (10): `/settings` `/robots` `/validate` `/optimize` `/title/*` `/breadcrumbs/*` `/ai-optimize-*` — R🟡(settings) **W⬜ E⬜ U⬜ F⬜(org/person schema, breadcrumbs)**
 - 🟡 **social-media** (7): `/settings` `/preview` `/validate` `/generate-og` `/generate-twitter` `/optimize-image` `/{ctx}/{id}` — R🟡 **W⬜ E⬜ U⬜ F⬜(OG/Twitter tags)**
 - 🟡 **social-platforms** (1): `/settings` — R✅ **W⬜ U⬜**
-- 🟡 **schema** (13): `/settings` `/types` `/generate` `/validate` `/preview` `/deploy` `/deployed` `/bulk` `/optimize` `/import` `/enable-for-post` `/{ctx}/{id}` `/performance/{ctx}/{id}` — R🟡(settings) **W⬜ E⬜ U⬜ F⬜(JSON-LD types)**
+- ✅ **schema** (13): `/settings` `/types` `/generate` `/validate` `/preview` `/deploy` `/deployed` `/bulk` `/optimize` `/import` `/enable-for-post` `/{ctx}/{id}` `/performance/{ctx}/{id}` — R✅(settings/types/deployed/per-post) W✅(settings save + generate) E✅(generate/preview/settings→400) F✅(post JSON-LD `@type`) · not run: deploy/bulk/optimize/import · U⬜
 - ✅ **sitemap** (11): `/settings` `/generate` `/validate` `/status` `/stats` `/ping` `/submit` `/cleanup` `/custom-post-types` `/robots-urls` `/woocommerce-status` — R✅(status/stats/settings/cpt/robots-urls/woo) W✅(generate XML + settings save) E✅(empty→400) validate✅ F✅(index + per-type xml) · not run: submit/ping (external), cleanup · U⬜
 - 🟡 **image-seo** (3): `/settings` `/media-alt/run` `/media-alt/stats` — R✅ **W⬜ E⬜ U⬜ F⬜(alt/title applied)**
 - 🟡 **author-archives** (1): `/settings` — R✅ **W⬜ E⬜ F⬜(archive noindex honored)**
@@ -143,7 +143,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 
 1. ✅ **Global SEO** — R/W/E/F done (all/reset, per-type, save+restore, title-template renders on front). A/U deferred to roles/UI passes.
 2. ✅ **Sitemap** — R/W/E/F done (reads, generate XML, validate, per-type sitemap XML). submit/ping skipped (external); U deferred. ⚠ found robots.txt 404 bug (see FINDINGS.md).
-3. **Schema** (types/generate/validate/deploy, per-context, JSON-LD F)
+3. ✅ **Schema** — R/W/E/F done (settings/types/deployed/per-post, generate, JSON-LD @type on front). deploy/bulk/optimize/import + U deferred.
 4. **Social** (settings W, generate-og/twitter, OG/Twitter tag F)
 5. **Robots meta + Site identity** (W, head robots F, breadcrumbs/org schema F)
 6. **SEO score & analyzer** (calculate/run, history, score panel U, E)
