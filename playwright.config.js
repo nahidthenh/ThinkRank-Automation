@@ -27,7 +27,7 @@ const slackReporter = [
     maxNumberOfFailuresToShow: 0,
     meta: [
       {
-        key: 'ThinkRank E2E — Test Results',
+        key: ':thinkrank: ThinkRank Automation — Test Results',
         value: process.env.PAGES_URL
           ? `🖥️ <${process.env.PAGES_URL}|View Results!>`
           : 'Local run',
