@@ -60,7 +60,7 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - 🟡 **social-media** (7): `/settings` `/preview` `/validate` `/generate-og` `/generate-twitter` `/optimize-image` `/{ctx}/{id}` — R🟡 **W⬜ E⬜ U⬜ F⬜(OG/Twitter tags)**
 - 🟡 **social-platforms** (1): `/settings` — R✅ **W⬜ U⬜**
 - 🟡 **schema** (13): `/settings` `/types` `/generate` `/validate` `/preview` `/deploy` `/deployed` `/bulk` `/optimize` `/import` `/enable-for-post` `/{ctx}/{id}` `/performance/{ctx}/{id}` — R🟡(settings) **W⬜ E⬜ U⬜ F⬜(JSON-LD types)**
-- 🟡 **sitemap** (11): `/settings` `/generate` `/validate` `/status` `/stats` `/ping` `/submit` `/cleanup` `/custom-post-types` `/robots-urls` `/woocommerce-status` — R🟡(settings) F🟡(index xml) **W⬜ E⬜ U⬜ F⬜(per-type sitemaps, robots.txt urls)**
+- ✅ **sitemap** (11): `/settings` `/generate` `/validate` `/status` `/stats` `/ping` `/submit` `/cleanup` `/custom-post-types` `/robots-urls` `/woocommerce-status` — R✅(status/stats/settings/cpt/robots-urls/woo) W✅(generate XML + settings save) E✅(empty→400) validate✅ F✅(index + per-type xml) · not run: submit/ping (external), cleanup · U⬜
 - 🟡 **image-seo** (3): `/settings` `/media-alt/run` `/media-alt/stats` — R✅ **W⬜ E⬜ U⬜ F⬜(alt/title applied)**
 - 🟡 **author-archives** (1): `/settings` — R✅ **W⬜ E⬜ F⬜(archive noindex honored)**
 - ⬜ **metadata** (1): `/metadata/{post_id}` — **R⬜ W⬜** (per-post SEO meta get/update)
@@ -142,7 +142,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 (highest user-facing value + write surface first):
 
 1. ✅ **Global SEO** — R/W/E/F done (all/reset, per-type, save+restore, title-template renders on front). A/U deferred to roles/UI passes.
-2. **Sitemap** (settings W, generate/validate/status, per-type xml F, robots urls)
+2. ✅ **Sitemap** — R/W/E/F done (reads, generate XML, validate, per-type sitemap XML). submit/ping skipped (external); U deferred. ⚠ found robots.txt 404 bug (see FINDINGS.md).
 3. **Schema** (types/generate/validate/deploy, per-context, JSON-LD F)
 4. **Social** (settings W, generate-og/twitter, OG/Twitter tag F)
 5. **Robots meta + Site identity** (W, head robots F, breadcrumbs/org schema F)
