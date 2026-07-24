@@ -10,6 +10,26 @@ dotenv.config({ quiet: true });
 // site that has ThinkRank Free + Pro active by editing WP_URL in .env.
 const WP_URL = process.env.WP_URL || 'https://thinkrank.test';
 
+// Slack reporter — only added when SLACK_BOT_TOKEN is set (see .env / CI secrets).
+// Posts a run summary to the configured Slack channel(s).
+const slackReporter = [
+  './node_modules/playwright-slack-report/dist/src/SlackReporter.js',
+  {
+    slackOAuthToken: process.env.SLACK_BOT_TOKEN,
+    channels: [process.env.SLACK_CHANNEL_ID].filter(Boolean),
+    sendResults: 'always',
+    maxNumberOfFailuresToShow: 0,
+    meta: [
+      {
+        key: 'ThinkRank E2E — Test Results',
+        value: process.env.PAGES_URL
+          ? `🖥️ <${process.env.PAGES_URL}|View Results!>`
+          : 'Local run',
+      },
+    ],
+  },
+];
+
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
@@ -26,7 +46,11 @@ export default defineConfig({
   // runs the whole suite clean with no retries. Override with `--workers=N` or
   // WP_WORKERS when running against a beefier host.
   workers: process.env.WP_WORKERS ? Number(process.env.WP_WORKERS) : 2,
-  reporter: 'html',
+  reporter: [
+    process.env.CI ? ['github'] : ['list'],
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    ...(process.env.SLACK_BOT_TOKEN ? [slackReporter] : []),
+  ],
 
   use: {
     baseURL: WP_URL,

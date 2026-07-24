@@ -8,9 +8,19 @@ name: E2E
 #   WPDevelopers/thinkrank and WPDevelopers/thinkrank-pro (both private).
 #
 # wp-env serves the site at http://localhost:8888 with admin / password.
+#
+# Optional Slack report — set repo secrets SLACK_BOT_TOKEN (xoxb-… with
+# chat:write) and SLACK_CHANNEL_ID. When SLACK_BOT_TOKEN is present the
+# playwright-slack-report reporter posts a run summary to the channel.
 
 on:
   workflow_dispatch:
+    inputs:
+      slack_channel:
+        description: "Send Slack report? (on/off)"
+        type: choice
+        options: [on, 'off']
+        default: 'on'
 
 jobs:
   e2e:
@@ -83,8 +93,14 @@ jobs:
         run: npx wp-env run cli wp plugin activate thinkrank thinkrank-pro
 
       # ── Run the suite ─────────────────────────────────────────────────────
+      # Slack env only on this step, so a CI run posts a single summary
+      # (the editor lane below runs without the Slack reporter).
       - name: Run E2E suite (fast lane)
         run: npm test
+        env:
+          SLACK_BOT_TOKEN: ${{ inputs.slack_channel != 'off' && secrets.SLACK_BOT_TOKEN || '' }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          PAGES_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Run editor lane
         run: npm run test:editor
