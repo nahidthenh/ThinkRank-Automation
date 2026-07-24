@@ -135,9 +135,13 @@ green and committable.
 - **Phase 3 — Free tooling**
   F8, F9, F11, F15–F18, F23. Image SEO, author archives, term SEO, indexing, llms.txt,
   integrations, import/export round-trip, roles/capabilities.
-- **Phase 4 — Pro core**
-  Pro precondition + `@pro` auto-skip wiring, license status, Pro menu presence,
-  Redirections CRUD + a real 301 on the front end.
+- **Phase 4 — Pro core** *(in progress)*
+  - ✅ Portability wiring: precondition now requires Free only; Pro is detected
+    (`fixtures/pro.js`) and every `@pro` spec self-skips when Pro is inactive.
+  - ✅ Activation/license: license REST endpoint responds, License admin screen mounts,
+    Pro "License" menu item present.
+  - ✅ Redirections CRUD + a real 301 on the front end (create → list → 301 → toggle off
+    → delete), with a self-cleaning sweep of `/tr-e2e-*` redirects.
 - **Phase 5 — Pro features**
   Broken links, internal links, local SEO (+LocalBusiness schema), rank tracker, custom schema.
 - **Phase 6 — Long tail**

@@ -19,8 +19,11 @@ const WP_URL = process.env.WP_URL || 'https://thinkrank.test';
 const ADMIN_USER = process.env.WP_ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.WP_ADMIN_PASS || '';
 
-// ── Precondition: ThinkRank Free + Pro must both be active ──────────────────
-setup('ThinkRank Free + Pro are active on the target site', async ({ request }) => {
+// ── Precondition: ThinkRank Free must be active (Pro is optional) ────────────
+// Free is required for any test to be meaningful. Pro is detected but NOT
+// required, so the suite stays honest on a Free-only site — @pro specs
+// self-skip when the Pro REST namespace is absent (see fixtures/pro.js).
+setup('ThinkRank Free is active on the target site', async ({ request }) => {
   const resp = await request.get(`${WP_URL}/wp-json/`);
   expect(resp.ok(), `Target site ${WP_URL} did not respond to /wp-json/`).toBeTruthy();
 
@@ -31,10 +34,9 @@ setup('ThinkRank Free + Pro are active on the target site', async ({ request }) 
     `ThinkRank Free is not active on ${WP_URL} (missing "thinkrank/v1" REST namespace)`,
   ).toContain('thinkrank/v1');
 
-  expect(
-    namespaces,
-    `ThinkRank Pro is not active on ${WP_URL} (missing "thinkrank-pro/v1" REST namespace)`,
-  ).toContain('thinkrank-pro/v1');
+  if (!namespaces.includes('thinkrank-pro/v1')) {
+    console.warn(`\n⚠  ThinkRank Pro not active on ${WP_URL} — @pro tests will be skipped.\n`);
+  }
 });
 
 // ── Log in and persist the admin session ────────────────────────────────────
