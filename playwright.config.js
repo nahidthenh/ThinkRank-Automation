@@ -11,12 +11,10 @@ dotenv.config({ quiet: true });
 const WP_URL = process.env.WP_URL || 'https://thinkrank.test';
 
 // Slack reporter — posts a run summary to the configured channel(s).
-// Enabled only when a token is set AND we're in CI (or SLACK_REPORT=1 is passed),
-// so routine LOCAL runs stay quiet and don't spam the channel. To post from a
-// local run on purpose: `SLACK_REPORT=1 npm test` (or `npm run test:slack`).
+// Enabled whenever SLACK_BOT_TOKEN is set (local runs included). Leave the token
+// blank in .env to disable, or set SLACK_REPORT=0 to skip a specific run.
 const slackEnabled =
-  Boolean(process.env.SLACK_BOT_TOKEN) &&
-  (Boolean(process.env.CI) || process.env.SLACK_REPORT === '1');
+  Boolean(process.env.SLACK_BOT_TOKEN) && process.env.SLACK_REPORT !== '0';
 
 const slackReporter = [
   './node_modules/playwright-slack-report/dist/src/SlackReporter.js',

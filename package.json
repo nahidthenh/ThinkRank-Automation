@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test --grep-invert @editor",
-    "test:editor": "playwright test --grep @editor --workers=1",
+    "test:editor": "SLACK_REPORT=0 playwright test --grep @editor --workers=1",
     "test:all": "npm run test && npm run test:editor",
-    "test:slack": "SLACK_REPORT=1 playwright test --grep-invert @editor",
+    "test:noslack": "SLACK_REPORT=0 playwright test --grep-invert @editor",
     "report": "playwright show-report"
   },
   "keywords": [],
