@@ -151,8 +151,13 @@ green and committable.
     (keywords/suggestions), Custom Schema (entries/targets), Top Content.
   - ⏳ Next: write round-trips for custom schema entries; LocalBusiness schema on the front;
     broken-link scan flow; internal-link suggestion apply.
-- **Phase 6 — Long tail**
-  Analytics, AI tools, migration, wizard, WooCommerce, GA/Search Console, advanced sitemaps.
+- **Phase 6 — Long tail** *(in progress)*
+  - ✅ Free: SEO analytics (F14), AI status/providers + content briefs (F19), migration
+    snapshots (F21), setup-wizard state (F22), email report, system/plugin/capabilities.
+  - ✅ Pro: publisher/advanced sitemaps (P7), WooCommerce settings (P8), Google Analytics
+    accounts (P9). Connection-dependent endpoints asserted tolerantly for portability.
+  - ⏳ Next: URL inspection (returns 403 — needs capability/connection investigation);
+    write flows for migration import and AI generation.
 - **Phase 7 — Hardening** *(in progress)*
   - ✅ CI wiring: GitHub Actions workflow (`.github/workflows/e2e.yml`) stands up ephemeral
     WordPress via `wp-env` (`.wp-env.json`), builds + installs Free & Pro, runs the suite.
