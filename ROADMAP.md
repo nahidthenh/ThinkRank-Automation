@@ -63,15 +63,15 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - ✅ **sitemap** (11): `/settings` `/generate` `/validate` `/status` `/stats` `/ping` `/submit` `/cleanup` `/custom-post-types` `/robots-urls` `/woocommerce-status` — R✅(status/stats/settings/cpt/robots-urls/woo) W✅(generate XML + settings save) E✅(empty→400) validate✅ F✅(index + per-type xml) · not run: submit/ping (external), cleanup · U⬜
 - ✅ **image-seo** (3): `/settings` `/media-alt/run` `/media-alt/stats` — R✅(settings/stats) W✅(settings round-trip) · not run: media-alt/run (mutates media) · F⬜
 - 🟡 **author-archives** (1): `/settings` — R✅ **W⬜ E⬜ F⬜(archive noindex honored)**
-- ⬜ **metadata** (1): `/metadata/{post_id}` — **R⬜ W⬜** (per-post SEO meta get/update)
-- ⬜ **focus-keyword-usage** (1): `/focus-keyword-usage` — **R⬜**
+- ✅ **metadata** (1): `/metadata/{post_id}` — R✅(per-post SEO fields) · W⬜(update)
+- ✅ **focus-keyword-usage** (1): `/focus-keyword-usage` — E✅(missing keyword param→400)
 
 ### SEO scoring & analysis
 - ✅ **seo-score** (4): `/calculate` `/get` `/latest` `/history` — R✅(get/latest/history) W✅(calculate) E✅(missing/invalid post_id→400) · U⬜(score panel)
 - ✅ **seo-analyzer** (2): `/seo-analyzer` `/run` — R✅ W✅(run returns fresh scored report) · U⬜
 - 🟡 **performance** (6): `/recommendations` `/opportunities` `/diagnostics` `/history` `/monitor` `/collect` — R🟡(recs) **rest⬜ U⬜**
 - 🟡 **seo-analytics** (14): `/status` `/dashboard` `/insights` `/opportunities` `/branded` `/countries` `/indexing-status` `/intelligent-*` `/search-daily` `/search-totals` `/refresh` `/setup/search-console` `/test-connections` — R🟡(status/dash) **rest⬜ E⬜**
-- ⬜ **analytics** (3): `/overview` `/usage` `/costs` — **R⬜**
+- ✅ **analytics** (3): `/overview` `/usage` `/costs` — R✅
 
 ### AI & content
 - ⬜ **ai** (10): `/status` `/providers` `/test-connection` `/analyze-content` `/generate-metadata` `/improve-title` `/improve-meta-description` `/add-dofollow-link` `/add-keyword-paragraph` `/explain-suggestion` — R🟡(status/providers) **generation endpoints⬜ E⬜(no key → graceful)**
@@ -89,8 +89,8 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - 🟡 **import** (migration) (6): `/snapshots` `/snapshot` `/detect` `/migrate` `/export` `/cleanup` — R🟡(snapshots) **W⬜(detect/migrate flow) U⬜**
 - 🟡 **email-report** (2): `/config` `/test-send` — R🟡(config) **W⬜ E⬜**
 - 🟡 **role-manager** (1): `/role-manager` — R✅ **W⬜ A⬜(non-admin denied)**
-- ⬜ **mcp** (7): `/mcp` `/connect` `/connection` `/disconnect` `/rotate` `/oauth/register` `/oauth/token` — **R⬜ W⬜ A⬜**
-- ⬜ **settings** (1): `/settings` — **R⬜**
+- 🟡 **mcp** (7): `/mcp` `/connect` `/connection` `/disconnect` `/rotate` `/oauth/*` — R✅(connection) · connect/disconnect/rotate/oauth⬜ (mutating/auth flows)
+- ✅ **settings** (1): `/settings` — R✅
 - 🟡 **capabilities** (1) · 🟡 **plugin-info** (1) · 🟡 **system-status** (1) — R✅
 
 ### Cross-cutting (free)
@@ -114,7 +114,7 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - 🟡 **publisher-sitemaps** (1): `/settings` — R🟡 **W⬜ F⬜(news sitemap)**
 - 🟡 **woocommerce** (1): `/settings` — R🟡 **W⬜ F⬜(product schema, gate on Woo)**
 - 🟡 **top-content** (1): `/top-content` — R🟡
-- ⬜ **keywords** (2): `/top-queries` `/winning-losing` — **R⬜**
+- ✅ **keywords** (2): `/top-queries` `/winning-losing` — R✅ (Search-Console-backed, tolerant)
 - 🟡 **url-inspection** (2): `/status` `/batch-inspect` — investigated (⚠ **403 bug** on site_error — file to `thinkrank-pro`) **R⬜ proper-status⬜**
 - ⬜ **schema/import-file** (1): `/schema/import-file` — **W⬜**
 - 🟡 **Pro precondition/menu**: license screen + menu ✅

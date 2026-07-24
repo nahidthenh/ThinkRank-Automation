@@ -40,4 +40,13 @@ test.describe('@pro Feature read contracts', () => {
     expect([200, 429, 500, 502, 503, 504]).toContain(status);
     if (status === 200) expect(Array.isArray(body?.data)).toBeTruthy();
   });
+
+  // Keywords (top-queries / winning-losing) — Search Console-backed; tolerant.
+  test('keywords top-queries and winning-losing respond', async () => {
+    const top = await proGet(api, '/keywords/top-queries');
+    expect([200, 429, 500, 502, 503, 504]).toContain(top.status);
+
+    const wl = await proGet(api, '/keywords/winning-losing');
+    expect([200, 429, 500, 502, 503, 504]).toContain(wl.status);
+  });
 });
