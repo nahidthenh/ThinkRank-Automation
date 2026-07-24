@@ -102,7 +102,7 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 
 ## 5. PRO feature coverage (15 areas · 48 routes)
 
-- ✅ **redirections** (7): `/redirections`(GET/POST) `/{id}`(POST/DELETE) `/{id}/toggle` `/404-logs` `/404-logs/{id}` `/404-logs/clear` `/from-404` — CRUD+301+toggle✅ **404-logs⬜ from-404⬜ regex/match-types E⬜ F(regex redirect)⬜**
+- ✅ **redirections** (7): `/redirections`(GET/POST) `/{id}`(POST/DELETE) `/{id}/toggle` `/404-logs` `/404-logs/{id}` `/404-logs/clear` `/from-404` — CRUD+301+toggle✅ 404-logs R✅ E✅(invalid match→400) F✅(regex redirect 301s on front) · not run: from-404/404-logs delete/clear (would mutate real logs)
 - ✅ **locations** (2): `/locations` `/{id}` — CRUD✅ **update(POST /{id})⬜ E⬜ U⬜ F⬜(LocalBusiness schema)**
 - 🟡 **license** (6): `/get-license` `/activate` `/deactivate` `/delete-license` `/resend-otp` `/submit-otp` — R🟡(get) U🟡(screen) **activate/deactivate flow⬜ E⬜**
 - 🟡 **broken-links** (8): `/broken-links` `/scan` `/{id}` `/{id}/dismiss` `/{id}/edit` `/{id}/recheck` `/{id}/restore` `/{id}/unlink` — R🟡(list) **scan flow⬜ item actions⬜ E⬜**
@@ -147,7 +147,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 4. ✅ **Social** — R/W/E/F done (settings, per-post og_tags, OG/Twitter tags on front). generate-twitter/optimize-image + U deferred.
 5. ✅ **Robots meta + Site identity** — R/W/E/F done (settings, robots content, templates, head robots meta, Org/Person JSON-LD). robots.txt 404 documented (test.fail). validate/optimize + U deferred.
 6. ✅ **SEO score & analyzer** — score calculate/get/latest/history + E; analyzer report/run. Score-panel U deferred.
-7. **Redirections (finish)** — 404-logs, from-404, regex match, regex redirect F
+7. ✅ **Redirections (finish)** — 404-logs read, invalid match_type E, regex redirect 301 on front. from-404/clear skipped (mutate real logs).
 8. **Custom schema (Pro)** — create→verify→delete, custom JSON-LD F
 9. **Rank tracker / Internal links / Broken links (Pro)** — write flows
 10. **Instant indexing · llms.txt · image SEO** — write + frontend

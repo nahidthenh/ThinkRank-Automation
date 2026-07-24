@@ -34,7 +34,7 @@ test.describe('@pro Redirections', () => {
     const { body } = await proGet(api, '/redirections');
     const items = body?.data?.items || [];
     for (const it of items) {
-      if (typeof it.source_url === 'string' && it.source_url.startsWith('/tr-e2e-')) {
+      if (typeof it.source_url === 'string' && it.source_url.includes('tr-e2e')) {
         await api.delete(`${PRO_BASE}/redirections/${it.id}`);
       }
     }
@@ -78,5 +78,45 @@ test.describe('@pro Redirections', () => {
     const after = await proGet(api, '/redirections');
     const stillThere = (after.body?.data?.items || []).map((i) => i.source_url);
     expect(stillThere).not.toContain(SOURCE);
+  });
+
+  test('R: 404-logs returns an items list', async () => {
+    const { status, body } = await proGet(api, '/redirections/404-logs');
+    expect(status).toBe(200);
+    expect(Array.isArray(body?.data?.items)).toBeTruthy();
+  });
+
+  test('E: invalid match_type → 400', async () => {
+    const { status, body } = await proPost(api, '/redirections', {
+      source_url: '/tr-e2e-bad',
+      target_url: '/x',
+      match_type: 'not_a_real_type',
+    });
+    expect(status).toBe(400);
+    expect(body?.code).toBe('invalid_match');
+  });
+
+  test('regex redirect: a matching URL 301s to the target', async ({ request }) => {
+    const pattern = '^/tr-e2e-rx-.*$';
+    const target = 'https://thinkrank.test/?tr-e2e-rx=1';
+    let id;
+    try {
+      const create = await proPost(api, '/redirections', {
+        source_url: pattern,
+        target_url: target,
+        match_type: 'regex',
+        http_code: 301,
+        status: 'active',
+      });
+      expect(create.status).toBe(201);
+      id = create.body?.data?.id;
+
+      // Any URL matching the pattern should 301 to the target.
+      const hit = await request.get('/tr-e2e-rx-anything-here', { maxRedirects: 0 });
+      expect(hit.status()).toBe(301);
+      expect(hit.headers()['location']).toBe(target);
+    } finally {
+      if (id) await api.delete(`${PRO_BASE}/redirections/${id}`);
+    }
   });
 });
