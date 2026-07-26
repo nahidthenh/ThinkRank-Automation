@@ -74,9 +74,9 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - ✅ **analytics** (3): `/overview` `/usage` `/costs` — R✅
 
 ### AI & content
-- ⬜ **ai** (10): `/status` `/providers` `/test-connection` `/analyze-content` `/generate-metadata` `/improve-title` `/improve-meta-description` `/add-dofollow-link` `/add-keyword-paragraph` `/explain-suggestion` — R🟡(status/providers) **generation endpoints⬜ E⬜(no key → graceful)**
-- 🟡 **content-brief** (4): `/list` `/generate` `/{id}` `/{id}/export` — R🟡(list) **W⬜(generate) E⬜**
-- ⬜ **pillar-content** (1): `/suggestions` — **R⬜**
+- ✅ **ai** (10): `/status` `/providers` `/test-connection` `/analyze-content` `/generate-metadata` `/improve-title` `/improve-meta-description` `/add-dofollow-link` `/add-keyword-paragraph` `/explain-suggestion` — R✅(status shape + providers catalog w/ models/requires_key) E✅(generate-metadata/analyze-content missing content→400; add-keyword-paragraph missing keyword→400; no-key graceful degrade→400 success:false, self-skips when key present) · generation happy-path skipped (billable/external)
+- ✅ **content-brief** (4): `/list` `/generate` `/{id}` `/{id}/export` — R✅(list returns success/data[]/total, empty-graceful w/o key) · generate/export⬜ (billable)
+- ✅ **pillar-content** (1): `/suggestions` — R✅(array for real post) E✅(missing post_id→400) · self-cleaning seed post
 
 ### Indexing, llms, integrations
 - ✅ **instant-indexing** (5): `/settings` `/history` `/post-types` `/submit` `/regenerate-key` — R✅(settings/history/post-types) W✅(settings save persists) · not run: submit (external), regenerate-key
@@ -153,7 +153,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 9. ✅ **Rank tracker / Internal links (Pro)** — rank-tracker add→list→delete (poll-hardened) + reads; internal-links suggest + reads. Broken-links write flows (scan/item actions) deferred (mutate real data).
 10. ✅ **Instant indexing · llms.txt · image SEO** — reads + settings save round-trips (snapshot/restore) + llms empty→400. submit/generate/media-run skipped (external/persistent/mutating).
 11. **Settings-management** — export→import→restore round-trip
-12. **AI tools** — generation endpoints (graceful no-key), content-brief generate
+12. ✅ **AI tools & content** — R (status/providers/content-brief-list/pillar-suggestions) + E (missing-param 400s, no-key graceful degrade). Billable generation happy-paths skipped (self-skip when key present).
 13. **Migration / Setup wizard** — multi-step flows
 14. ✅ **Analytics / seo-analytics / performance** — remaining reads covered.
 15. ✅ **MCP (connection) · metadata · focus-keyword-usage · keywords (Pro)** — reads/E covered.
