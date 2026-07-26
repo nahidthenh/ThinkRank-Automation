@@ -87,4 +87,20 @@ test.describe('@pro Feature read contracts', () => {
     const { status } = await proGet(api, '/url-inspection/status');
     expect([200, 400, 401, 403, 429, 500, 502, 503, 504]).toContain(status);
   });
+
+  // E — broken-links item lookup with a non-existent id is a clean 404
+  // (not a 500). Read-only edge; the scan/fix actions mutate real data.
+  test('E: broken-links item with a bad id → 404', async () => {
+    const { status } = await proGet(api, '/broken-links/999999');
+    expect([404, 400]).toContain(status);
+  });
+
+  // E — custom-schema import-file rejects an empty upload (400) before doing
+  // any work. Never send a real file (it would create schema entries).
+  test('E: schema/import-file with no file → 400', async () => {
+    const resp = await api.post('/wp-json/thinkrank-pro/v1/schema/import-file', {
+      data: {},
+    });
+    expect(resp.status()).toBe(400);
+  });
 });

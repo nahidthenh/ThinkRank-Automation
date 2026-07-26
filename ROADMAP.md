@@ -62,7 +62,7 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - ✅ **schema** (13): `/settings` `/types` `/generate` `/validate` `/preview` `/deploy` `/deployed` `/bulk` `/optimize` `/import` `/enable-for-post` `/{ctx}/{id}` `/performance/{ctx}/{id}` — R✅(settings/types/deployed/per-post) W✅(settings save + generate) E✅(generate/preview/settings→400) F✅(post JSON-LD `@type`) · not run: deploy/bulk/optimize/import · U⬜
 - ✅ **sitemap** (11): `/settings` `/generate` `/validate` `/status` `/stats` `/ping` `/submit` `/cleanup` `/custom-post-types` `/robots-urls` `/woocommerce-status` — R✅(status/stats/settings/cpt/robots-urls/woo) W✅(generate XML + settings save) E✅(empty→400) validate✅ F✅(index + per-type xml) · not run: submit/ping (external), cleanup · U⬜
 - ✅ **image-seo** (3): `/settings` `/media-alt/run` `/media-alt/stats` — R✅(settings/stats) W✅(settings round-trip) · not run: media-alt/run (mutates media) · F⬜
-- 🟡 **author-archives** (1): `/settings` — R✅ **W⬜ E⬜ F⬜(archive noindex honored)**
+- ✅ **author-archives** (1): `/settings` — R✅(enabled/title/meta_description) W✅(title template round-trip + restore) E✅(no settings object→400) · F⬜(archive noindex honored)
 - ✅ **metadata** (1): `/metadata/{post_id}` — R✅(per-post SEO fields) · W⬜(update)
 - ✅ **focus-keyword-usage** (1): `/focus-keyword-usage` — E✅(missing keyword param→400)
 
@@ -81,17 +81,17 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 ### Indexing, llms, integrations
 - ✅ **instant-indexing** (5): `/settings` `/history` `/post-types` `/submit` `/regenerate-key` — R✅(settings/history/post-types) W✅(settings save persists) · not run: submit (external), regenerate-key
 - ✅ **llms-txt** (7): `/settings` `/status` `/generate` `/validate` `/overview` `/ai-optimize` `/optimization-results` — R✅(settings/status/overview) W✅(settings save) E✅(empty→400) · not run: generate (persistent file), F(`/llms.txt`)⬜
-- 🟡 **integrations** (6): `/settings` `/test-connections` `/detect-ga4-conflicts` `/verify-ga4-tracking` `/search-console/sites` `/google/disconnect` — R🟡(settings) **rest⬜ W⬜**
+- ✅ **integrations** (6): `/settings` `/test-connections` `/detect-ga4-conflicts` `/verify-ga4-tracking` `/search-console/sites` `/google/disconnect` — R✅(settings/detect-ga4-conflicts/search-console-sites) · test-connections/verify-ga4/disconnect⬜(POST/external) W⬜
 
 ### Data, wizard, admin, system
 - ✅ **settings-management** (10): `/export` `/import` `/backup` `/restore` `/reset` `/validate` `/global` `/schema` `/category/{cat}` `/maintenance/performance-indexes` — R✅(export payload + secret redaction; schema/global reads) W✅(export→import overwrite round-trip: idempotence + mutate-flag-persists-then-restore, on a secret-free category, self-restoring w/ afterAll safety net) E✅(import missing→400, unparseable→400) · backup/restore/reset⬜(destructive) maintenance⬜
 - ✅ **setup-wizard** (8): `/state` `/step` `/complete` `/consent` `/install-plugins` `/deactivate-plugin` `/migrated-plugins` `/migrated-site-data` — R✅(state flags + migrated-site-data) E✅(install-plugins missing slugs→400) · step/complete/consent/migrated-plugins/deactivate⬜(mutating; ⚠ enum NOT enforced — see FINDINGS, bad values run the handler) U⬜(wizard flow)
 - ✅ **import** (migration) (6): `/snapshots` `/snapshot` `/detect` `/migrate` `/export` `/cleanup` — R✅(snapshots + detect) E✅(export/migrate/cleanup/snapshot-delete missing-required→400) · migrate/export/cleanup happy-path⬜(mutating; ⚠ enum on plugin/type NOT enforced) U⬜
 - ✅ **email-report** (2): `/config` `/test-send` — R✅(config: config/capabilities/sections/tokens) · test-send⬜(sends email)
-- 🟡 **role-manager** (1): `/role-manager` — R✅ **W⬜ A⬜(non-admin denied)**
-- 🟡 **mcp** (7): `/mcp` `/connect` `/connection` `/disconnect` `/rotate` `/oauth/*` — R✅(connection) · connect/disconnect/rotate/oauth⬜ (mutating/auth flows)
+- ✅ **role-manager** (1): `/role-manager` — R✅(roles matrix) A✅(editor denied 401/403) · W⬜(save caps)
+- ✅ **mcp** (7): `/mcp` `/connect` `/connection` `/disconnect` `/rotate` `/oauth/*` — R✅(connection: connected/mcp_endpoint) · connect/disconnect/rotate/oauth⬜ (mutating/auth flows) · /mcp is POST JSON-RPC (protocol)
 - ✅ **settings** (1): `/settings` — R✅
-- 🟡 **capabilities** (1) · 🟡 **plugin-info** (1) · 🟡 **system-status** (1) — R✅
+- ✅ **capabilities** (1) · ✅ **plugin-info** (1) · ✅ **system-status** (1) — R✅(explicit contracts)
 
 ### Cross-cutting (free)
 - 🟡 **Security**: unauth → 401/403 — done for 5 endpoints; extend to all write endpoints
@@ -106,17 +106,17 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - ✅ **redirections** (7): `/redirections`(GET/POST) `/{id}`(POST/DELETE) `/{id}/toggle` `/404-logs` `/404-logs/{id}` `/404-logs/clear` `/from-404` — CRUD+301+toggle✅ 404-logs R✅ E✅(invalid match→400) F✅(regex redirect 301s on front) · not run: from-404/404-logs delete/clear (would mutate real logs)
 - ✅ **locations** (2): `/locations` `/{id}` — CRUD✅ **update(POST /{id})⬜ E⬜ U⬜ F⬜(LocalBusiness schema)**
 - 🟡 **license** (6): `/get-license` `/activate` `/deactivate` `/delete-license` `/resend-otp` `/submit-otp` — R🟡(get) U🟡(screen) **activate/deactivate flow⬜ E⬜**
-- 🟡 **broken-links** (8): `/broken-links` `/scan` `/{id}` `/{id}/dismiss` `/{id}/edit` `/{id}/recheck` `/{id}/restore` `/{id}/unlink` — R🟡(list) **scan flow⬜ item actions⬜ E⬜**
+- ✅ **broken-links** (8): `/broken-links` `/scan` `/{id}` `/{id}/dismiss` `/{id}/edit` `/{id}/recheck` `/{id}/restore` `/{id}/unlink` — R✅(list items) E✅(bad id→404) · scan/item actions⬜(mutate real data)
 - ✅ **internal-links** (4): `/post-types` `/posts` `/suggest` `/apply` — R✅(types/posts) W✅(suggest returns suggestions) · apply⬜(mutates content)
 - ✅ **rank-tracker** (5): `/keywords`(GET/POST) `/keywords/{hash}` `/suggestions` `/history` `/refresh` — R✅(keywords/suggestions) W✅(add keyword → listed → delete) E✅(history without param→400) · refresh⬜(external)
 - ✅ **custom-schema** (3): `/entries`(GET/POST) `/entries/{id}` `/targets` — R✅(entries/targets) W✅(create→listed→delete) E✅(invalid JSON → valid_json=false) · F⬜(custom JSON-LD needs targeting conditions)
 - ✅ **google-analytics** (4): `/accounts` `/properties` `/data-streams` `/run-report` — R✅(accounts, connection-gated tolerant) · properties/data-streams/run-report⬜(connection-gated)
 - ✅ **publisher-sitemaps** (1): `/settings` — R✅(config envelope) · W⬜ F⬜(news sitemap)
 - ✅ **woocommerce** (1): `/settings` — R✅(config envelope) · W⬜ F⬜(product schema, gate on Woo)
-- 🟡 **top-content** (1): `/top-content` — R🟡
+- ✅ **top-content** (1): `/top-content` — R✅ (Search-Console-backed, tolerant)
 - ✅ **keywords** (2): `/top-queries` `/winning-losing` — R✅ (Search-Console-backed, tolerant)
 - ✅ **url-inspection** (2): `/status` `/batch-inspect` — R✅(status tolerant; ⚠ 403 on site_error documented as FINDINGS bug, file to `thinkrank-pro`) · batch-inspect⬜(external)
-- ⬜ **schema/import-file** (1): `/schema/import-file` — **W⬜**
+- ✅ **schema/import-file** (1): `/schema/import-file` — E✅(no file→400) · happy-path W⬜(creates schema entries)
 - 🟡 **Pro precondition/menu**: license screen + menu ✅
 
 ---

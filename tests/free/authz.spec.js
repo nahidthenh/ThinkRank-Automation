@@ -79,6 +79,11 @@ test.describe('@free Authorization — non-admin capability enforcement', () => 
     });
     expect([401, 403]).toContain(schema.status());
 
+    // Role Manager read (requires the manage-roles capability) — an editor is
+    // denied even from reading the role/capability matrix.
+    const roles = await ctx.request.get(`${TR_BASE}/role-manager`, { headers });
+    expect([401, 403]).toContain(roles.status());
+
     await ctx.close();
   });
 });
