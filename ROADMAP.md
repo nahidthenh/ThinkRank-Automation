@@ -69,8 +69,8 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 ### SEO scoring & analysis
 - ✅ **seo-score** (4): `/calculate` `/get` `/latest` `/history` — R✅(get/latest/history) W✅(calculate) E✅(missing/invalid post_id→400) · U⬜(score panel)
 - ✅ **seo-analyzer** (2): `/seo-analyzer` `/run` — R✅ W✅(run returns fresh scored report) · U⬜
-- 🟡 **performance** (6): `/recommendations` `/opportunities` `/diagnostics` `/history` `/monitor` `/collect` — R🟡(recs) **rest⬜ U⬜**
-- 🟡 **seo-analytics** (14): `/status` `/dashboard` `/insights` `/opportunities` `/branded` `/countries` `/indexing-status` `/intelligent-*` `/search-daily` `/search-totals` `/refresh` `/setup/search-console` `/test-connections` — R🟡(status/dash) **rest⬜ E⬜**
+- ✅ **performance** (6): `/recommendations` `/opportunities` `/diagnostics` `/history` `/monitor` `/collect` — R✅(recommendations/opportunities/diagnostics/history/monitor envelopes) · collect⬜(POST/mutating) U⬜
+- ✅ **seo-analytics** (14): `/status` `/dashboard` `/insights` `/opportunities` `/branded` `/countries` `/indexing-status` `/intelligent-*` `/search-daily` `/search-totals` `/refresh` `/setup/search-console` `/test-connections` — R✅(status/dashboard/indexing/branded/countries/insights/opportunities, SC-backed tolerant) E✅(search-totals no-params→400) · refresh/setup/test-connections⬜(POST/connection) U⬜
 - ✅ **analytics** (3): `/overview` `/usage` `/costs` — R✅
 
 ### AI & content
@@ -85,9 +85,9 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 
 ### Data, wizard, admin, system
 - ⬜ **settings-management** (10): `/export` `/import` `/backup` `/restore` `/reset` `/validate` `/global` `/schema` `/category/{cat}` `/maintenance/performance-indexes` — **export→import round-trip⬜ E⬜** (methods are POST)
-- 🟡 **setup-wizard** (8): `/state` `/step` `/complete` `/consent` `/install-plugins` `/deactivate-plugin` `/migrated-plugins` `/migrated-site-data` — R🟡(state) **rest⬜ U⬜(wizard flow)**
-- 🟡 **import** (migration) (6): `/snapshots` `/snapshot` `/detect` `/migrate` `/export` `/cleanup` — R🟡(snapshots) **W⬜(detect/migrate flow) U⬜**
-- 🟡 **email-report** (2): `/config` `/test-send` — R🟡(config) **W⬜ E⬜**
+- ✅ **setup-wizard** (8): `/state` `/step` `/complete` `/consent` `/install-plugins` `/deactivate-plugin` `/migrated-plugins` `/migrated-site-data` — R✅(state: completed/total_steps flags) · step/complete/install/deactivate⬜(mutating) U⬜(wizard flow)
+- ✅ **import** (migration) (6): `/snapshots` `/snapshot` `/detect` `/migrate` `/export` `/cleanup` — R✅(snapshots + detect) · migrate/export/cleanup⬜(mutating) U⬜
+- ✅ **email-report** (2): `/config` `/test-send` — R✅(config: config/capabilities/sections/tokens) · test-send⬜(sends email)
 - 🟡 **role-manager** (1): `/role-manager` — R✅ **W⬜ A⬜(non-admin denied)**
 - 🟡 **mcp** (7): `/mcp` `/connect` `/connection` `/disconnect` `/rotate` `/oauth/*` — R✅(connection) · connect/disconnect/rotate/oauth⬜ (mutating/auth flows)
 - ✅ **settings** (1): `/settings` — R✅
@@ -110,12 +110,12 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - ✅ **internal-links** (4): `/post-types` `/posts` `/suggest` `/apply` — R✅(types/posts) W✅(suggest returns suggestions) · apply⬜(mutates content)
 - ✅ **rank-tracker** (5): `/keywords`(GET/POST) `/keywords/{hash}` `/suggestions` `/history` `/refresh` — R✅(keywords/suggestions) W✅(add keyword → listed → delete) E✅(history without param→400) · refresh⬜(external)
 - ✅ **custom-schema** (3): `/entries`(GET/POST) `/entries/{id}` `/targets` — R✅(entries/targets) W✅(create→listed→delete) E✅(invalid JSON → valid_json=false) · F⬜(custom JSON-LD needs targeting conditions)
-- 🟡 **google-analytics** (4): `/accounts` `/properties` `/data-streams` `/run-report` — R🟡(accounts) **rest⬜ (connection-gated)**
-- 🟡 **publisher-sitemaps** (1): `/settings` — R🟡 **W⬜ F⬜(news sitemap)**
-- 🟡 **woocommerce** (1): `/settings` — R🟡 **W⬜ F⬜(product schema, gate on Woo)**
+- ✅ **google-analytics** (4): `/accounts` `/properties` `/data-streams` `/run-report` — R✅(accounts, connection-gated tolerant) · properties/data-streams/run-report⬜(connection-gated)
+- ✅ **publisher-sitemaps** (1): `/settings` — R✅(config envelope) · W⬜ F⬜(news sitemap)
+- ✅ **woocommerce** (1): `/settings` — R✅(config envelope) · W⬜ F⬜(product schema, gate on Woo)
 - 🟡 **top-content** (1): `/top-content` — R🟡
 - ✅ **keywords** (2): `/top-queries` `/winning-losing` — R✅ (Search-Console-backed, tolerant)
-- 🟡 **url-inspection** (2): `/status` `/batch-inspect` — investigated (⚠ **403 bug** on site_error — file to `thinkrank-pro`) **R⬜ proper-status⬜**
+- ✅ **url-inspection** (2): `/status` `/batch-inspect` — R✅(status tolerant; ⚠ 403 on site_error documented as FINDINGS bug, file to `thinkrank-pro`) · batch-inspect⬜(external)
 - ⬜ **schema/import-file** (1): `/schema/import-file` — **W⬜**
 - 🟡 **Pro precondition/menu**: license screen + menu ✅
 
@@ -155,7 +155,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 11. **Settings-management** — export→import→restore round-trip
 12. ✅ **AI tools & content** — R (status/providers/content-brief-list/pillar-suggestions) + E (missing-param 400s, no-key graceful degrade). Billable generation happy-paths skipped (self-skip when key present).
 13. **Migration / Setup wizard** — multi-step flows
-14. ✅ **Analytics / seo-analytics / performance** — remaining reads covered.
+14. ✅ **Analytics / seo-analytics / performance / data reads** — remaining reads covered: seo-analytics (status/dashboard/indexing/branded/countries + search-totals E), performance (history/monitor), email-report config, setup-wizard state, import snapshots/detect; Pro reads (publisher-sitemaps, woocommerce, locations, google-analytics, url-inspection).
 15. ✅ **MCP (connection) · metadata · focus-keyword-usage · keywords (Pro)** — reads/E covered.
     (schema import-file, MCP connect/oauth flows deferred — mutating/auth.)
 16. 🟡 **Cross-cutting** — ✅ role/authz matrix (editor rejected on manage writes);

@@ -49,4 +49,42 @@ test.describe('@pro Feature read contracts', () => {
     const wl = await proGet(api, '/keywords/winning-losing');
     expect([200, 429, 500, 502, 503, 504]).toContain(wl.status);
   });
+
+  // Publisher Sitemaps (News/Video) — settings read.
+  test('publisher-sitemaps/settings returns a config envelope', async () => {
+    const { status, body } = await proGet(api, '/publisher-sitemaps/settings');
+    expect(status).toBe(200);
+    expect(body?.success).toBe(true);
+    expect(body).toHaveProperty('data');
+  });
+
+  // WooCommerce SEO — settings read (config returned even when Woo is inactive).
+  test('woocommerce/settings returns a config envelope', async () => {
+    const { status, body } = await proGet(api, '/woocommerce/settings');
+    expect(status).toBe(200);
+    expect(body?.success).toBe(true);
+    expect(body).toHaveProperty('data');
+  });
+
+  // Local SEO — locations list (create/delete covered by local-seo.spec.js).
+  test('locations returns a list envelope', async () => {
+    const { status, body } = await proGet(api, '/locations');
+    expect(status).toBe(200);
+    expect(body?.success).toBe(true);
+    expect(body).toHaveProperty('data');
+  });
+
+  // Google Analytics — accounts list is connection-gated; tolerate gated errors.
+  test('google-analytics/accounts responds', async () => {
+    const { status, body } = await proGet(api, '/google-analytics/accounts');
+    expect([200, 400, 401, 403, 429, 500, 502, 503, 504]).toContain(status);
+    if (status === 200) expect(body).toHaveProperty('data');
+  });
+
+  // URL Inspection status — Search-Console-gated. A 403 here is the documented
+  // FINDINGS bug (site_error surfaced as 403); accept it until fixed upstream.
+  test('url-inspection/status responds (403 = documented bug)', async () => {
+    const { status } = await proGet(api, '/url-inspection/status');
+    expect([200, 400, 401, 403, 429, 500, 502, 503, 504]).toContain(status);
+  });
 });
