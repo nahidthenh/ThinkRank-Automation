@@ -59,6 +59,17 @@ const importPayload = (api, payloadObj, overwrite = true) =>
     overwrite_existing: overwrite,
   });
 
+// Import can coerce scalar types (e.g. an int 3600 comes back as "3600"), so
+// compare settings by value with scalars normalized to strings — this still
+// catches added/removed keys or genuinely changed values.
+function normalizeSettings(obj) {
+  const out = {};
+  for (const [k, v] of Object.entries(obj || {})) {
+    out[k] = v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v);
+  }
+  return out;
+}
+
 test.describe('@free Settings management — export/import round-trip', () => {
   // The write tests mutate a shared settings category, so they must run in
   // order on one worker (fullyParallel would otherwise race them).
@@ -156,8 +167,8 @@ test.describe('@free Settings management — export/import round-trip', () => {
     expect(imp.body?.success).toBe(true);
 
     const after = await exportCategory(api, target);
-    expect(JSON.stringify(after.settings[target])).toBe(
-      JSON.stringify(snapshot.settings[target])
+    expect(normalizeSettings(after.settings[target])).toEqual(
+      normalizeSettings(snapshot.settings[target])
     );
   });
 
@@ -174,16 +185,16 @@ test.describe('@free Settings management — export/import round-trip', () => {
     expect(impMut.status).toBe(200);
 
     const afterMutate = await exportCategory(api, target);
-    expect(afterMutate.settings[target][flagKey]).toBe(!original);
+    expect(String(afterMutate.settings[target][flagKey])).toBe(String(!original));
 
     // Restore the original snapshot and confirm it's back.
     const impRestore = await importPayload(api, snapshot, true);
     expect(impRestore.status).toBe(200);
 
     const afterRestore = await exportCategory(api, target);
-    expect(afterRestore.settings[target][flagKey]).toBe(original);
-    expect(JSON.stringify(afterRestore.settings[target])).toBe(
-      JSON.stringify(snapshot.settings[target])
+    expect(String(afterRestore.settings[target][flagKey])).toBe(String(original));
+    expect(normalizeSettings(afterRestore.settings[target])).toEqual(
+      normalizeSettings(snapshot.settings[target])
     );
   });
 });

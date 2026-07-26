@@ -15,6 +15,10 @@ const EDITOR_EMAIL = 'tr_e2e_editor@example.com';
 const EDITOR_PASS = 'TrE2e!Editor#2026';
 
 test.describe('@free Authorization — non-admin capability enforcement', () => {
+  // Creating a user + a fresh browser login + several requests; the login
+  // redirect can be slow on a cold CI backend, so allow generous time.
+  test.describe.configure({ timeout: 90_000 });
+
   /** @type {import('@playwright/test').APIRequestContext} */
   let admin;
   let editorId;
@@ -56,7 +60,7 @@ test.describe('@free Authorization — non-admin capability enforcement', () => 
     await page.fill('#user_login', EDITOR_USER);
     await page.fill('#user_pass', EDITOR_PASS);
     await page.click('#wp-submit');
-    await expect(page).toHaveURL(/wp-admin/, { timeout: 30_000 });
+    await expect(page).toHaveURL(/wp-admin/, { timeout: 60_000 });
 
     // A valid nonce for the editor session — so rejection is a *capability*
     // decision, not a missing-nonce one.

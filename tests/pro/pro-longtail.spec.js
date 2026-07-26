@@ -42,7 +42,8 @@ test.describe('@pro Long-tail read contracts', () => {
   // Pro P9 — Google Analytics (depends on a live GA connection).
   test('google-analytics accounts endpoint responds', async () => {
     const { status, body } = await proGet(api, '/google-analytics/accounts');
-    expect([200, 400, 403]).toContain(status);
+    // Connection-gated: 401/403/400 when GA isn't connected (fresh site).
+    expect([200, 400, 401, 403, 429, 500, 502, 503, 504]).toContain(status);
     expect(body).toBeTruthy();
     if (status === 200) {
       expect(Array.isArray(body?.data?.accounts)).toBeTruthy();

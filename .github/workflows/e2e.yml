@@ -25,6 +25,9 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    # Needed to publish the Playwright HTML report to the gh-pages branch.
+    permissions:
+      contents: write
     env:
       HUSKY: '0'
       WP_URL: http://localhost:8888
@@ -117,6 +120,13 @@ jobs:
       - name: Activate ThinkRank Free + Pro
         run: npx wp-env run cli wp plugin activate thinkrank thinkrank-pro
 
+      # Pretty permalinks — required for the rewrite-based public URLs the suite
+      # checks (e.g. /sitemap_index.xml). Fresh wp-env defaults to plain (?p=).
+      - name: Enable pretty permalinks
+        run: |
+          npx wp-env run cli wp rewrite structure '/%postname%/'
+          npx wp-env run cli wp rewrite flush --hard
+
       # ── Run the suite ─────────────────────────────────────────────────────
       # Slack env only on this step, so a CI run posts a single summary
       # (the editor lane below runs without the Slack reporter).
@@ -125,9 +135,25 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ inputs.slack_channel != 'off' && secrets.SLACK_BOT_TOKEN || '' }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-          PAGES_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          # The Slack "View Results!" link points at the PUBLIC hosted report
+          # (GitHub Pages), not the Actions run page. Per-run subpath so each
+          # message links to its own report permanently.
+          PAGES_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/runs/${{ github.run_id }}/
+
+      # Publish the fast-lane HTML report to GitHub Pages (gh-pages branch) so the
+      # Slack link resolves to a public page. Done before the editor lane, which
+      # would otherwise overwrite playwright-report/. keep_files retains prior runs.
+      - name: Publish Playwright report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./playwright-report
+          destination_dir: runs/${{ github.run_id }}
+          keep_files: true
 
       - name: Run editor lane
+        if: always()
         run: npm run test:editor
 
       - name: Upload Playwright report

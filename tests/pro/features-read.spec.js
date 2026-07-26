@@ -37,17 +37,18 @@ test.describe('@pro Feature read contracts', () => {
   // Top Content report — also Search Console-backed; tolerate transient errors.
   test('top-content returns a report array', async () => {
     const { status, body } = await proGet(api, '/top-content');
-    expect([200, 429, 500, 502, 503, 504]).toContain(status);
+    // Search-Console-backed: 401/403/400 when no Google connection (fresh site).
+    expect([200, 400, 401, 403, 429, 500, 502, 503, 504]).toContain(status);
     if (status === 200) expect(Array.isArray(body?.data)).toBeTruthy();
   });
 
   // Keywords (top-queries / winning-losing) — Search Console-backed; tolerant.
   test('keywords top-queries and winning-losing respond', async () => {
     const top = await proGet(api, '/keywords/top-queries');
-    expect([200, 429, 500, 502, 503, 504]).toContain(top.status);
+    expect([200, 400, 401, 403, 429, 500, 502, 503, 504]).toContain(top.status);
 
     const wl = await proGet(api, '/keywords/winning-losing');
-    expect([200, 429, 500, 502, 503, 504]).toContain(wl.status);
+    expect([200, 400, 401, 403, 429, 500, 502, 503, 504]).toContain(wl.status);
   });
 
   // Publisher Sitemaps (News/Video) — settings read.

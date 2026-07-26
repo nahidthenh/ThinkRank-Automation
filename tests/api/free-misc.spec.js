@@ -10,7 +10,9 @@ import { test, expect } from '@playwright/test';
 import { createApiContext, trGet } from '../fixtures/wp-api.js';
 import { createPost, deletePost } from '../fixtures/seed.js';
 
-const OK = [200, 429, 500, 502, 503, 504];
+// Search-Console-backed endpoints: 200 when connected; 401/403 when the site
+// has no Google connection (fresh installs), plus transient upstream errors.
+const OK = [200, 401, 403, 429, 500, 502, 503, 504];
 
 test.describe('@free REST — remaining read contracts', () => {
   /** @type {import('@playwright/test').APIRequestContext} */

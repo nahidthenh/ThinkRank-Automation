@@ -15,8 +15,9 @@
 import { test, expect } from '@playwright/test';
 import { createApiContext, trGet } from '../fixtures/wp-api.js';
 
-// Search-Console-backed endpoints: 200 when connected, gated/transient otherwise.
-const SC_OK = [200, 400, 429, 500, 502, 503, 504];
+// Search-Console-backed endpoints: 200 when connected; 400/401/403 when the
+// site has no Google connection (e.g. a fresh install), plus transient errors.
+const SC_OK = [200, 400, 401, 403, 429, 500, 502, 503, 504];
 
 test.describe('@free analytics, performance & data reads', () => {
   /** @type {import('@playwright/test').APIRequestContext} */
