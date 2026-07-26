@@ -85,8 +85,8 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 
 ### Data, wizard, admin, system
 - ✅ **settings-management** (10): `/export` `/import` `/backup` `/restore` `/reset` `/validate` `/global` `/schema` `/category/{cat}` `/maintenance/performance-indexes` — R✅(export payload + secret redaction; schema/global reads) W✅(export→import overwrite round-trip: idempotence + mutate-flag-persists-then-restore, on a secret-free category, self-restoring w/ afterAll safety net) E✅(import missing→400, unparseable→400) · backup/restore/reset⬜(destructive) maintenance⬜
-- ✅ **setup-wizard** (8): `/state` `/step` `/complete` `/consent` `/install-plugins` `/deactivate-plugin` `/migrated-plugins` `/migrated-site-data` — R✅(state: completed/total_steps flags) · step/complete/install/deactivate⬜(mutating) U⬜(wizard flow)
-- ✅ **import** (migration) (6): `/snapshots` `/snapshot` `/detect` `/migrate` `/export` `/cleanup` — R✅(snapshots + detect) · migrate/export/cleanup⬜(mutating) U⬜
+- ✅ **setup-wizard** (8): `/state` `/step` `/complete` `/consent` `/install-plugins` `/deactivate-plugin` `/migrated-plugins` `/migrated-site-data` — R✅(state flags + migrated-site-data) E✅(install-plugins missing slugs→400) · step/complete/consent/migrated-plugins/deactivate⬜(mutating; ⚠ enum NOT enforced — see FINDINGS, bad values run the handler) U⬜(wizard flow)
+- ✅ **import** (migration) (6): `/snapshots` `/snapshot` `/detect` `/migrate` `/export` `/cleanup` — R✅(snapshots + detect) E✅(export/migrate/cleanup/snapshot-delete missing-required→400) · migrate/export/cleanup happy-path⬜(mutating; ⚠ enum on plugin/type NOT enforced) U⬜
 - ✅ **email-report** (2): `/config` `/test-send` — R✅(config: config/capabilities/sections/tokens) · test-send⬜(sends email)
 - 🟡 **role-manager** (1): `/role-manager` — R✅ **W⬜ A⬜(non-admin denied)**
 - 🟡 **mcp** (7): `/mcp` `/connect` `/connection` `/disconnect` `/rotate` `/oauth/*` — R✅(connection) · connect/disconnect/rotate/oauth⬜ (mutating/auth flows)
@@ -154,7 +154,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 10. ✅ **Instant indexing · llms.txt · image SEO** — reads + settings save round-trips (snapshot/restore) + llms empty→400. submit/generate/media-run skipped (external/persistent/mutating).
 11. ✅ **Settings-management** — export→import round-trip: secret-safe, idempotent, mutate-flag-persists-then-restores (self-restoring, secret-free category, afterAll safety net). backup/restore/reset still deferred (destructive).
 12. ✅ **AI tools & content** — R (status/providers/content-brief-list/pillar-suggestions) + E (missing-param 400s, no-key graceful degrade). Billable generation happy-paths skipped (self-skip when key present).
-13. **Migration / Setup wizard** — multi-step flows
+13. ✅ **Migration / Setup wizard** — safe surface only: reads (state, migrated-site-data, detect, snapshots) + required-param guards (empty write → 400, handler never runs). Happy-path steps/migrate/export/cleanup deferred (destructive). ⚠ Caught a validation gap: enum/min-max NOT enforced on these write args (bad `plugin`/`step` runs the handler & mutates) — see FINDINGS.md.
 14. ✅ **Analytics / seo-analytics / performance / data reads** — remaining reads covered: seo-analytics (status/dashboard/indexing/branded/countries + search-totals E), performance (history/monitor), email-report config, setup-wizard state, import snapshots/detect; Pro reads (publisher-sitemaps, woocommerce, locations, google-analytics, url-inspection).
 15. ✅ **MCP (connection) · metadata · focus-keyword-usage · keywords (Pro)** — reads/E covered.
     (schema import-file, MCP connect/oauth flows deferred — mutating/auth.)

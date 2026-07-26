@@ -61,3 +61,37 @@ suite. Not yet filed. Repo routing: free → `WPDevelopers/thinkrank`, pro →
 - **Repro:** `POST instant-indexing/settings {}` → 200; then `GET` shows
   `auto_submit_post_types: []`.
 - **Severity:** Low (data-integrity footgun, not a security issue).
+
+## 4. [Low/Medium] Setup-wizard & migration write endpoints don't enforce their `enum` / min-max arg schemas
+
+- **Repo:** thinkrank (free)
+- **Where:**
+  - `includes/api/class-setup-wizard-endpoint.php` — `/setup-wizard/migrated-plugins`,
+    `/deactivate-plugin` (args declare `plugin` with `enum => MIGRATABLE_PLUGINS`), and
+    `/step` (declares `minimum => 1, maximum => TOTAL_STEPS`).
+  - `includes/admin/importers/class-import-controller.php` — `/import/migrate`,
+    `/import/cleanup`, `/import/snapshot` (args declare `plugin`/`type` with `enum`).
+- **What:** The registered arg schemas constrain these params with `enum` / `minimum` /
+  `maximum`, but the constraints are **not enforced** — a request with an out-of-enum value
+  reaches the handler and mutates state. `required` **is** enforced (missing param → 400),
+  but value validation is skipped (likely because a custom `sanitize_callback` is set with no
+  matching `validate_callback`, so WP's default `rest_validate_request_arg` never runs the
+  enum check).
+- **Repro (observed):**
+  - `POST /wp-json/thinkrank/v1/setup-wizard/migrated-plugins {"plugin":"notaplugin"}` → **200**,
+    and `notaplugin` is appended to the `thinkrank_setup_wizard_migrated_plugins` option
+    (should be `400 rest_invalid_param`).
+  - `POST /setup-wizard/step {"step":99999}` → **200** (handler clamps internally, so the
+    schema max is moot — but the schema is still not enforced).
+  - `POST /import/migrate {"plugin":"notaplugin","type":"postmeta","page":1}` → **200** (no-op,
+    but the enum guard did not reject it).
+- **Impact:** Low–Medium. Mostly lets arbitrary strings into an onboarding flag list and
+  broadens the intended surface of `deactivate-plugin` (still gated by the `deactivate_plugins`
+  cap, so not a privilege escalation). Main risk is data-integrity / relying on a guard that
+  silently does nothing.
+- **Expected:** Out-of-enum / out-of-range values are rejected with `400` before the handler
+  runs (add explicit `validate_callback => 'rest_validate_request_arg'`, or validate in-handler).
+- **Severity:** Low–Medium (validation correctness; a documented guard that isn't active).
+- **Note:** Surfaced while building the wizard/migration E2E spec — which is exactly why that
+  spec sends only empty bodies (required-param 400s) and never bad enum values against these
+  endpoints (bad values mutate state). The probe's test writes were restored.
