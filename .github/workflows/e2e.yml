@@ -4,7 +4,7 @@ name: E2E
 # ThinkRank Free and Pro into it, then run the Playwright suite against it.
 #
 # Required repository secret:
-#   THINKRANK_TOKEN — a GitHub token (PAT or fine-grained) with READ access to
+#   PLUGIN_REPO_TOKEN — a GitHub token (PAT or fine-grained) with READ access to
 #   WPDevelopers/thinkrank and WPDevelopers/thinkrank-pro (both private).
 #
 # wp-env serves the site at http://localhost:8888 with admin / password.
@@ -54,14 +54,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: WPDevelopers/thinkrank
-          token: ${{ secrets.THINKRANK_TOKEN }}
+          token: ${{ secrets.PLUGIN_REPO_TOKEN }}
           path: .wp-plugins/thinkrank
 
       - name: Check out ThinkRank Pro
         uses: actions/checkout@v4
         with:
           repository: WPDevelopers/thinkrank-pro
-          token: ${{ secrets.THINKRANK_TOKEN }}
+          token: ${{ secrets.PLUGIN_REPO_TOKEN }}
           path: .wp-plugins/thinkrank-pro
 
       # ── Build the plugins (assets/, dist/, vendor/ are gitignored) ────────
