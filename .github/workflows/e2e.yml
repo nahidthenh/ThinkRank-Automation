@@ -35,9 +35,12 @@ jobs:
         uses: actions/checkout@v4
 
       # pnpm builds the plugins (pnpm-lock); npm runs the automation repo (package-lock).
+      # pnpm 10+ reads pnpm-workspace.yaml as a settings file (shamefullyHoist,
+      # allowBuilds); pnpm 9 treats it as a workspace and fails with "packages
+      # field missing or empty". The plugins are authored on pnpm 10/11.
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - uses: actions/setup-node@v4
         with:
