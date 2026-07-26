@@ -90,7 +90,14 @@ jobs:
       - name: Build ThinkRank Pro
         working-directory: .wp-plugins/thinkrank-pro
         run: |
-          composer install --no-dev --optimize-autoloader --no-interaction
+          # Pro's only Composer runtime dependency (wpdeveloper/licensing) is
+          # Mozart-scoped and ALREADY COMMITTED under includes/Dependencies/,
+          # mapped via the composer autoload (THINKRANK_PRO\Dependencies\). So we
+          # only need to generate the autoloader — `composer install` would try to
+          # re-clone the private WPDevelopers/licensing repo and fail. dump-autoload
+          # runs fully offline and produces the same vendor/autoload.php the
+          # distributed plugin ships.
+          composer dump-autoload --no-dev --optimize --no-interaction
           pnpm install --frozen-lockfile --ignore-scripts
           pnpm run build
 
