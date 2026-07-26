@@ -12,6 +12,7 @@
 
 import { test, expect } from '@playwright/test';
 import { createApiContext, proGet, proPost, PRO_BASE } from '../fixtures/wp-api.js';
+import { createPost, deletePost } from '../fixtures/seed.js';
 import { isProActive } from '../fixtures/pro.js';
 
 const NAME = `TR E2E Location ${Date.now()}`;
@@ -65,5 +66,31 @@ test.describe('@pro Local SEO — Locations', () => {
     const after = await proGet(api, '/locations');
     const stillThere = (after.body?.data?.items || []).map((i) => i.name);
     expect(stillThere).not.toContain(NAME);
+  });
+
+  // Frontend (F): the [thinkrank_locations] shortcode renders a real location.
+  test('the [thinkrank_locations] shortcode renders a location on the front end', async () => {
+    const name = `TR E2E Location shortcode ${Date.now()}`;
+    const create = await proPost(api, '/locations', {
+      name,
+      address: '1 Market St',
+      city: 'Testville',
+    });
+    expect([200, 201]).toContain(create.status);
+    const locId = create.body?.data?.id ?? create.body?.id;
+
+    let postId;
+    try {
+      postId = await createPost(api, {
+        title: 'TR locations shortcode',
+        content: '[thinkrank_locations]',
+      });
+      const link = (await (await api.get(`/wp-json/wp/v2/posts/${postId}`)).json()).link;
+      const html = await (await api.get(link)).text();
+      expect(html).toContain(name);
+    } finally {
+      await deletePost(api, postId);
+      if (locId) await api.delete(`${PRO_BASE}/locations/${locId}`);
+    }
   });
 });

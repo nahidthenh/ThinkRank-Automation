@@ -135,12 +135,18 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 
 ## 7. Frontend outputs (F)
 
-- 🟡 head meta (robots/canonical/OG/Twitter) presence — **value correctness ⬜**
-- 🟡 JSON-LD present — **type/shape per schema config ⬜**
+- ✅ head meta **value-correctness**: canonical === permalink (post) / home URL; post robots =
+  index,follow (indexable) + not noindex; og:type = article
+- ✅ JSON-LD **value-correctness**: homepage WebSite name === configured site_name + SearchAction;
+  identity schema @type matches identity_type (blog/org→Organization, person→Person); post
+  BreadcrumbList ends at the post title
 - 🟡 sitemap index xml — **per-type sitemaps, lastmod, woo ⬜**
 - ✅ **Gutenberg block schema** — FAQ→FAQPage, HowTo→HowTo/HowToStep, TOC→SiteNavigationElement
   (seed post per block → fetch public HTML → parse JSON-LD → assert @type + our data; self-cleaning)
-- ⬜ robots.txt · llms.txt · breadcrumbs · redirect (regex) · LocalBusiness/product schema · `[thinkrank_locations]` shortcode
+- ✅ **`[thinkrank_locations]` shortcode** (Pro) — renders a real location's name on the front end
+  (create location → post w/ shortcode → fetch → assert; self-cleaning). Deeper LocalBusiness
+  JSON-LD assertion deferred (needs fuller business config to emit reliably).
+- ⬜ robots.txt (FINDINGS #1) · llms.txt (file not generated) · redirect (regex, covered in redirections) · product schema (Woo)
 
 ---
 
@@ -175,9 +181,10 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 Not yet built. These are real gaps beyond the API matrix (which is ~complete):
 18. **UI breadth (U)** — extend the fill→save→verify-via-API→restore pattern (schema, social,
     sitemap, analytics tabs); tab switching, form validation, save error/feedback states.
-19. **Frontend value-correctness (F)** — canonical URL, robots-meta values per toggle,
-    per-config schema @type, breadcrumbs HTML, `[thinkrank_locations]` shortcode (Pro
-    LocalBusiness), llms.txt output.
+19. ✅ **Frontend value-correctness (F)** — canonical===permalink/home, post robots indexable +
+    og:type=article, homepage WebSite name===site_name + SearchAction, identity schema @type per
+    identity_type, post BreadcrumbList ends at post title, `[thinkrank_locations]` shortcode
+    renders a location. Remaining ⬜: robots.txt (bug #1), llms.txt (ungenerated), Woo product schema.
 20. **Authz breadth (A)** — non-admin rejection on ALL write endpoints; logged-out (unauth)
     matrix; verify role-manager delegable caps actually grant access.
 21. **Security** — missing-nonce/CSRF → rejected on writes; XSS payload in a setting → escaped
