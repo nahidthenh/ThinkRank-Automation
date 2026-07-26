@@ -69,6 +69,12 @@ jobs:
         working-directory: .wp-plugins/thinkrank
         run: |
           composer install --no-dev --optimize-autoloader --no-interaction
+          # Bundled MCP runtime — a separate Composer project whose vendor/ is
+          # gitignored. thinkrank.php loads dependencies/vendor/autoload_packages.php
+          # to register the /mcp/* routes; without it those tests 404. Mirrors build-dist.sh.
+          if [ -f dependencies/composer.json ]; then
+            ( cd dependencies && composer install --no-dev --optimize-autoloader --no-interaction )
+          fi
           pnpm install --frozen-lockfile --ignore-scripts
           pnpm run build
 
