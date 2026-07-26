@@ -7,7 +7,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { createApiContext } from '../fixtures/wp-api.js';
+import { createApiContext, trPost } from '../fixtures/wp-api.js';
 import { createPost, deletePost } from '../fixtures/seed.js';
 
 test.describe('@free Frontend — homepage SEO head', () => {
@@ -61,11 +61,27 @@ test.describe('@free Frontend — post SEO head', () => {
 });
 
 test.describe('@free Frontend — sitemap', () => {
-  test('sitemap index is reachable and valid XML', async ({ request }) => {
-    const resp = await request.get('/sitemap_index.xml');
-    expect(resp.ok()).toBeTruthy();
-    const xml = await resp.text();
-    expect(xml).toMatch(/<\?xml/);
-    expect(xml).toMatch(/<(sitemapindex|urlset)/);
+  test('the published sitemap is reachable and valid XML', async ({ request }) => {
+    // The sitemap is a physical file written on generation; ensure it exists,
+    // then accept whichever entry point the site publishes (single or index).
+    const api = await createApiContext();
+    try {
+      await trPost(api, '/sitemap/generate', {}).catch(() => {});
+    } finally {
+      await api.dispose();
+    }
+
+    let servedXml = '';
+    for (const path of ['/sitemap_index.xml', '/sitemap.xml']) {
+      const resp = await request.get(path);
+      if (resp.ok()) {
+        const xml = await resp.text();
+        if (/<\?xml/.test(xml) && /<(sitemapindex|urlset)/.test(xml)) {
+          servedXml = xml;
+          break;
+        }
+      }
+    }
+    expect(servedXml, 'no valid sitemap served').toBeTruthy();
   });
 });
