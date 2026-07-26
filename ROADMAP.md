@@ -123,9 +123,15 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 
 ## 6. Admin screens (UI mount + interaction)
 
-- 🟡 dashboard · essential-seo · ai-tools · usages · settings — **mount ✅; interaction (tabs, forms, save) ⬜**
+- 🟡 dashboard · ai-tools · usages · settings — mount ✅; interaction ⬜
+- ✅ **essential-seo** — mount ✅ + **interaction ✅**: edit Site Identity name → click "Save
+  Settings" → POST /site-identity/settings 200 → value persisted (verified via API), self-restoring
+  (isolated @editor lane to avoid settings contention). First real U-dimension flow.
 - 🟡 pro **license** — mount ✅
 - ⬜ **migration** screen · **setup-wizard** flow
+
+> U-dimension pattern established (fill → save via UI → verify persisted via API → restore).
+> Extend to more screens/tabs: schema, social, sitemap, analytics settings, etc.
 
 ## 7. Frontend outputs (F)
 
