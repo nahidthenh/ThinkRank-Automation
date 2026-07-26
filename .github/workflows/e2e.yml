@@ -98,8 +98,11 @@ jobs:
           # runs fully offline and produces the same vendor/autoload.php the
           # distributed plugin ships.
           composer dump-autoload --no-dev --optimize --no-interaction
-          pnpm install --frozen-lockfile --ignore-scripts
-          pnpm run build
+          # Pro is an npm project — its committed lockfile is package-lock.json
+          # (pnpm-lock.yaml is gitignored). Use npm; fall back to a plain install
+          # if the lockfile is missing or out of sync. HUSKY=0 skips the prepare hook.
+          npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+          npm run build
 
       # ── Automation deps + browser (npm) ───────────────────────────────────
       - name: Install automation dependencies
