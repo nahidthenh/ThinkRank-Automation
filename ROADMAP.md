@@ -138,7 +138,9 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - 🟡 head meta (robots/canonical/OG/Twitter) presence — **value correctness ⬜**
 - 🟡 JSON-LD present — **type/shape per schema config ⬜**
 - 🟡 sitemap index xml — **per-type sitemaps, lastmod, woo ⬜**
-- ⬜ robots.txt · llms.txt · breadcrumbs · redirect (regex) · LocalBusiness/product schema
+- ✅ **Gutenberg block schema** — FAQ→FAQPage, HowTo→HowTo/HowToStep, TOC→SiteNavigationElement
+  (seed post per block → fetch public HTML → parse JSON-LD → assert @type + our data; self-cleaning)
+- ⬜ robots.txt · llms.txt · breadcrumbs · redirect (regex) · LocalBusiness/product schema · `[thinkrank_locations]` shortcode
 
 ---
 
@@ -166,6 +168,25 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
     (schema import-file, MCP connect/oauth flows deferred — mutating/auth.)
 16. 🟡 **Cross-cutting** — ✅ role/authz matrix (editor rejected on manage writes);
     ⏳ security on ALL writes, frontend value correctness, cross-browser, CI validation.
+17. ✅ **Gutenberg block schema output (F)** — FAQ/HowTo/TOC blocks emit FAQPage/HowTo/
+    SiteNavigationElement JSON-LD; seeded per block, parsed from public HTML, self-cleaning.
+
+### New phases — remaining coverage gaps (identified, prioritized)
+Not yet built. These are real gaps beyond the API matrix (which is ~complete):
+18. **UI breadth (U)** — extend the fill→save→verify-via-API→restore pattern (schema, social,
+    sitemap, analytics tabs); tab switching, form validation, save error/feedback states.
+19. **Frontend value-correctness (F)** — canonical URL, robots-meta values per toggle,
+    per-config schema @type, breadcrumbs HTML, `[thinkrank_locations]` shortcode (Pro
+    LocalBusiness), llms.txt output.
+20. **Authz breadth (A)** — non-admin rejection on ALL write endpoints; logged-out (unauth)
+    matrix; verify role-manager delegable caps actually grant access.
+21. **Security** — missing-nonce/CSRF → rejected on writes; XSS payload in a setting → escaped
+    on output; rate-limit 429 behavior.
+22. **Admin post-list integration** — SEO score column, focus-keyword inline edit, bulk actions.
+23. **FINDINGS regression guards** — encode #2/#3/#4 as xfail so they auto-flip green when fixed
+    (only robots.txt #1 is currently pinned via test.fail).
+24. **CI + portability** — make the workflow actually run the suite on ephemeral WP; validate a
+    second site via WP_URL; consider cross-browser.
 
 ### Deferred by request (destructive / external-dependency)
 - settings-management `reset/restore/import` (could wipe all settings)
