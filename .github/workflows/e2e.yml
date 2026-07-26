@@ -16,6 +16,14 @@ name: E2E
 on:
   workflow_dispatch:
     inputs:
+      free_ref:
+        description: "ThinkRank Free branch / tag / SHA to test (blank = default branch)"
+        type: string
+        default: ""
+      pro_ref:
+        description: "ThinkRank Pro branch / tag / SHA to test (blank = default branch)"
+        type: string
+        default: ""
       slack_channel:
         description: "Send Slack report? (on/off)"
         type: choice
@@ -62,11 +70,14 @@ jobs:
         run: composer config --global github-oauth.github.com "${{ secrets.PLUGIN_REPO_TOKEN }}"
 
       # ── Fetch the plugin sources (private repos) ──────────────────────────
+      # ref blank → the repo's default branch; set free_ref/pro_ref (e.g. "dev")
+      # to test a specific pre-release branch/tag/SHA of each plugin.
       - name: Check out ThinkRank Free
         uses: actions/checkout@v4
         with:
           repository: WPDevelopers/thinkrank
           token: ${{ secrets.PLUGIN_REPO_TOKEN }}
+          ref: ${{ inputs.free_ref }}
           path: .wp-plugins/thinkrank
 
       - name: Check out ThinkRank Pro
@@ -74,7 +85,20 @@ jobs:
         with:
           repository: WPDevelopers/thinkrank-pro
           token: ${{ secrets.PLUGIN_REPO_TOKEN }}
+          ref: ${{ inputs.pro_ref }}
           path: .wp-plugins/thinkrank-pro
+
+      - name: Show plugin versions under test
+        run: |
+          FREE_SHA=$(git -C .wp-plugins/thinkrank rev-parse --short HEAD)
+          PRO_SHA=$(git -C .wp-plugins/thinkrank-pro rev-parse --short HEAD)
+          echo "Free: ${{ inputs.free_ref || '(default branch)' }} @ ${FREE_SHA}"
+          echo "Pro:  ${{ inputs.pro_ref || '(default branch)' }} @ ${PRO_SHA}"
+          {
+            echo "### Plugin build under test"
+            echo "- **Free:** \`${{ inputs.free_ref || 'default' }}\` @ \`${FREE_SHA}\`"
+            echo "- **Pro:** \`${{ inputs.pro_ref || 'default' }}\` @ \`${PRO_SHA}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # ── Build the plugins (assets/, dist/, vendor/ are gitignored) ────────
       - name: Build ThinkRank Free
@@ -139,6 +163,8 @@ jobs:
           # (GitHub Pages), not the Actions run page. Per-run subpath so each
           # message links to its own report permanently.
           PAGES_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/runs/${{ github.run_id }}/
+          # Shown in the Slack summary so a release run says which branch it tested.
+          TEST_BUILD_LABEL: "free: ${{ inputs.free_ref || 'default' }} · pro: ${{ inputs.pro_ref || 'default' }}"
 
       # Assemble the Pages site: this run's report under runs/<id>/ plus a root
       # index.html that redirects to it — so both the per-run URL (used by the

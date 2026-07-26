@@ -30,6 +30,10 @@ const slackReporter = [
           ? `🖥️ <${process.env.PAGES_URL}|View Results!>`
           : 'Local run',
       },
+      // Which plugin build was tested (set by the CI workflow for branch runs).
+      ...(process.env.TEST_BUILD_LABEL
+        ? [{ key: 'Build under test', value: process.env.TEST_BUILD_LABEL }]
+        : []),
     ],
   },
 ];
