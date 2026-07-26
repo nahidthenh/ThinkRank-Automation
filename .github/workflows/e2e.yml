@@ -140,16 +140,30 @@ jobs:
           # message links to its own report permanently.
           PAGES_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/runs/${{ github.run_id }}/
 
-      # Publish the fast-lane HTML report to GitHub Pages (gh-pages branch) so the
-      # Slack link resolves to a public page. Done before the editor lane, which
-      # would otherwise overwrite playwright-report/. keep_files retains prior runs.
-      - name: Publish Playwright report to GitHub Pages
+      # Assemble the Pages site: this run's report under runs/<id>/ plus a root
+      # index.html that redirects to it — so both the per-run URL (used by the
+      # Slack link) AND the bare Pages root resolve to the latest report.
+      - name: Assemble Pages site
+        if: always()
+        run: |
+          mkdir -p public/runs/${{ github.run_id }}
+          cp -r playwright-report/. public/runs/${{ github.run_id }}/
+          cat > public/index.html <<HTML
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>ThinkRank E2E — latest report</title>
+          <meta http-equiv="refresh" content="0; url=./runs/${{ github.run_id }}/">
+          <p>Redirecting to the <a href="./runs/${{ github.run_id }}/">latest Playwright report</a>…</p>
+          HTML
+
+      # Publish to GitHub Pages (gh-pages branch). keep_files retains prior runs;
+      # the root index.html is overwritten each run to point at the newest report.
+      - name: Publish report to GitHub Pages
         if: always()
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./playwright-report
-          destination_dir: runs/${{ github.run_id }}
+          publish_dir: ./public
           keep_files: true
 
       - name: Run editor lane
