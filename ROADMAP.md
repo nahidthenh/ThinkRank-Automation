@@ -84,7 +84,7 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - 🟡 **integrations** (6): `/settings` `/test-connections` `/detect-ga4-conflicts` `/verify-ga4-tracking` `/search-console/sites` `/google/disconnect` — R🟡(settings) **rest⬜ W⬜**
 
 ### Data, wizard, admin, system
-- ⬜ **settings-management** (10): `/export` `/import` `/backup` `/restore` `/reset` `/validate` `/global` `/schema` `/category/{cat}` `/maintenance/performance-indexes` — **export→import round-trip⬜ E⬜** (methods are POST)
+- ✅ **settings-management** (10): `/export` `/import` `/backup` `/restore` `/reset` `/validate` `/global` `/schema` `/category/{cat}` `/maintenance/performance-indexes` — R✅(export payload + secret redaction; schema/global reads) W✅(export→import overwrite round-trip: idempotence + mutate-flag-persists-then-restore, on a secret-free category, self-restoring w/ afterAll safety net) E✅(import missing→400, unparseable→400) · backup/restore/reset⬜(destructive) maintenance⬜
 - ✅ **setup-wizard** (8): `/state` `/step` `/complete` `/consent` `/install-plugins` `/deactivate-plugin` `/migrated-plugins` `/migrated-site-data` — R✅(state: completed/total_steps flags) · step/complete/install/deactivate⬜(mutating) U⬜(wizard flow)
 - ✅ **import** (migration) (6): `/snapshots` `/snapshot` `/detect` `/migrate` `/export` `/cleanup` — R✅(snapshots + detect) · migrate/export/cleanup⬜(mutating) U⬜
 - ✅ **email-report** (2): `/config` `/test-send` — R✅(config: config/capabilities/sections/tokens) · test-send⬜(sends email)
@@ -152,7 +152,7 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 8. ✅ **Custom schema (Pro)** — create→listed→delete, valid_json flag. Front JSON-LD deferred (targeting conditions).
 9. ✅ **Rank tracker / Internal links (Pro)** — rank-tracker add→list→delete (poll-hardened) + reads; internal-links suggest + reads. Broken-links write flows (scan/item actions) deferred (mutate real data).
 10. ✅ **Instant indexing · llms.txt · image SEO** — reads + settings save round-trips (snapshot/restore) + llms empty→400. submit/generate/media-run skipped (external/persistent/mutating).
-11. **Settings-management** — export→import→restore round-trip
+11. ✅ **Settings-management** — export→import round-trip: secret-safe, idempotent, mutate-flag-persists-then-restores (self-restoring, secret-free category, afterAll safety net). backup/restore/reset still deferred (destructive).
 12. ✅ **AI tools & content** — R (status/providers/content-brief-list/pillar-suggestions) + E (missing-param 400s, no-key graceful degrade). Billable generation happy-paths skipped (self-skip when key present).
 13. **Migration / Setup wizard** — multi-step flows
 14. ✅ **Analytics / seo-analytics / performance / data reads** — remaining reads covered: seo-analytics (status/dashboard/indexing/branded/countries + search-totals E), performance (history/monitor), email-report config, setup-wizard state, import snapshots/detect; Pro reads (publisher-sitemaps, woocommerce, locations, google-analytics, url-inspection).
