@@ -9,6 +9,29 @@ We work through it **feature by feature, deeply** (not one smoke test per area).
 
 ---
 
+## 0. Remaining gaps (working tracker)
+
+API breadth + depth (R/W/E) and frontend value-correctness (F) are **essentially
+complete**. Every Free area (31 · 153 routes) and Pro area (15 · 48 routes) has at
+least a passing spec. The open work is **cross-cutting dimensions**, not missing
+features. Ordered by priority:
+
+| # | Gap (dimension) | State | What's missing | Ref |
+|---|-----------------|-------|----------------|-----|
+| G1 | **Security (writes)** | 🟡 | unauth→401/403 proven on 5 endpoints only; no missing-nonce/CSRF rejection, no XSS-payload→escaped-on-output, no rate-limit/429 | §21 |
+| G2 | **Authz breadth (A)** | 🟡 | editor-rejection proven on global-seo + schema writes only; extend to **all** write endpoints; add logged-out matrix; verify role-manager delegable caps actually grant access | §20 |
+| G3 | **Admin UI breadth (U)** | 🟡 | only `essential-seo` has the full fill→save→verify-via-API→restore flow; schema/social/sitemap/analytics tabs, tab switching, form validation, save error/feedback states; wizard flow + migration screen | §18, §6 |
+| G4 | **FINDINGS regression guards** | 🟡 | only robots.txt #1 pinned via `test.fail`; encode #2/#3/#4 as xfail so they auto-flip green when fixed | §23 |
+| G5 | **Admin post-list integration** | ⬜ | SEO score column, focus-keyword inline edit, bulk actions | §22 |
+| G6 | **Frontend (F) leftovers** | ⬜ | robots.txt (blocked by bug #1), llms.txt (file not generated), Woo product schema, per-type sitemaps/lastmod | §7 |
+| G7 | **CI + portability** | 🟡 | run suite on ephemeral WP, validate a 2nd site via `WP_URL`, consider cross-browser | §24 |
+
+**Deferred by request (not gaps — destructive / external):** settings `reset/restore/import`,
+AI-generation happy-paths (need key), migration `migrate/complete`, broken-links `scan` + item
+actions, `submit/ping`, `llms-txt generate`, `image-seo media-alt/run`. See §8 "Deferred".
+
+---
+
 ## 1. Principles
 
 1. **Site-agnostic.** Nothing hardcoded; the target is `WP_URL` in `.env`.
@@ -94,10 +117,10 @@ Tags: `@free` / `@pro` (+ `@editor` for the heavy block-editor lane).
 - ✅ **capabilities** (1) · ✅ **plugin-info** (1) · ✅ **system-status** (1) — R✅(explicit contracts)
 
 ### Cross-cutting (free)
-- 🟡 **Security**: unauth → 401/403 — done for 5 endpoints; extend to all write endpoints
-- ✅ **Authz/roles**: real editor user created via REST → rejected (401/403) on manage
-  writes (global-seo, schema); user cleaned up. Extend to more roles/endpoints as needed.
-- 🟡 **Frontend**: homepage+post meta, JSON-LD, sitemap index — **extend: robots meta values, canonical correctness, per-config schema, robots.txt, llms.txt**
+- 🟡 **Security** (G1): unauth → 401/403 — done for 5 endpoints; extend to all write endpoints; add missing-nonce/CSRF, XSS-escaped-on-output, rate-limit/429
+- 🟡 **Authz/roles** (G2): real editor user created via REST → rejected (401/403) on manage
+  writes (global-seo, schema); user cleaned up. **Extend to all write endpoints + logged-out matrix + delegable-caps grant check.**
+- 🟡 **Frontend** (G6): homepage+post meta, JSON-LD, sitemap index, block schema, shortcode all ✅ — **remaining: robots.txt (bug #1), llms.txt (ungenerated), Woo product schema, per-type sitemaps/lastmod**
 
 ---
 
@@ -179,20 +202,20 @@ dimensions, self-cleaning, verified green before commit. Proposed priority
 
 ### New phases — remaining coverage gaps (identified, prioritized)
 Not yet built. These are real gaps beyond the API matrix (which is ~complete):
-18. **UI breadth (U)** — extend the fill→save→verify-via-API→restore pattern (schema, social,
+18. **UI breadth (U)** — (**G3**) extend the fill→save→verify-via-API→restore pattern (schema, social,
     sitemap, analytics tabs); tab switching, form validation, save error/feedback states.
-19. ✅ **Frontend value-correctness (F)** — canonical===permalink/home, post robots indexable +
+19. ✅ **Frontend value-correctness (F)** — (remaining ⬜ tracked as **G6**) canonical===permalink/home, post robots indexable +
     og:type=article, homepage WebSite name===site_name + SearchAction, identity schema @type per
     identity_type, post BreadcrumbList ends at post title, `[thinkrank_locations]` shortcode
     renders a location. Remaining ⬜: robots.txt (bug #1), llms.txt (ungenerated), Woo product schema.
-20. **Authz breadth (A)** — non-admin rejection on ALL write endpoints; logged-out (unauth)
+20. **Authz breadth (A)** — (**G2**) non-admin rejection on ALL write endpoints; logged-out (unauth)
     matrix; verify role-manager delegable caps actually grant access.
-21. **Security** — missing-nonce/CSRF → rejected on writes; XSS payload in a setting → escaped
+21. **Security** — (**G1**) missing-nonce/CSRF → rejected on writes; XSS payload in a setting → escaped
     on output; rate-limit 429 behavior.
-22. **Admin post-list integration** — SEO score column, focus-keyword inline edit, bulk actions.
-23. **FINDINGS regression guards** — encode #2/#3/#4 as xfail so they auto-flip green when fixed
+22. **Admin post-list integration** — (**G5**) SEO score column, focus-keyword inline edit, bulk actions.
+23. **FINDINGS regression guards** — (**G4**) encode #2/#3/#4 as xfail so they auto-flip green when fixed
     (only robots.txt #1 is currently pinned via test.fail).
-24. **CI + portability** — make the workflow actually run the suite on ephemeral WP; validate a
+24. **CI + portability** — (**G7**) make the workflow actually run the suite on ephemeral WP; validate a
     second site via WP_URL; consider cross-browser.
 
 ### Deferred by request (destructive / external-dependency)
