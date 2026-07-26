@@ -52,6 +52,12 @@ jobs:
           php-version: '8.2'
           tools: composer
 
+      # ThinkRank Pro requires a private Composer dependency
+      # (WPDevelopers/licensing via a git VCS repo). Give Composer a token so it
+      # can clone it over HTTPS; the token needs READ access to that repo too.
+      - name: Authenticate Composer for private WPDevelopers repos
+        run: composer config --global github-oauth.github.com "${{ secrets.PLUGIN_REPO_TOKEN }}"
+
       # ── Fetch the plugin sources (private repos) ──────────────────────────
       - name: Check out ThinkRank Free
         uses: actions/checkout@v4
