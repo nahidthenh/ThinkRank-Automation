@@ -69,6 +69,15 @@ jobs:
       - name: Authenticate Composer for private WPDevelopers repos
         run: composer config --global github-oauth.github.com "${{ secrets.PLUGIN_REPO_TOKEN }}"
 
+      # The plugin repos ship no composer.lock, so `composer install` resolves the
+      # full tree — including require-dev — even with --no-dev (which only skips
+      # *installing* dev packages, not resolving them). Composer 2.9+ then aborts
+      # the resolve because a dev-only dependency (wp-coding-standards/wpcs ^2.3)
+      # has a security advisory. wpcs is a linting tool, irrelevant to the E2E
+      # build, so disable advisory-blocking for this ephemeral CI build.
+      - name: Disable Composer security-advisory blocking (dev-only deps)
+        run: composer config --global policy.advisories.block false
+
       # ── Fetch the plugin sources (private repos) ──────────────────────────
       # ref blank → the repo's default branch; set free_ref/pro_ref (e.g. "dev")
       # to test a specific pre-release branch/tag/SHA of each plugin.
