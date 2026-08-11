@@ -95,3 +95,35 @@ suite. Not yet filed. Repo routing: free → `WPDevelopers/thinkrank`, pro →
 - **Note:** Surfaced while building the wizard/migration E2E spec — which is exactly why that
   spec sends only empty bodies (required-param 400s) and never bad enum values against these
   endpoints (bad values mutate state). The probe's test writes were restored.
+
+## 5. [High] Global SEO title template never reaches the browser when a theme filters `pre_get_document_title` later
+
+- **Repo:** thinkrank (free)
+- **Where:** `includes/frontend/class-seo-manager.php` — `override_document_title()` is hooked
+  on `pre_get_document_title` at **priority 1**.
+- **What:** `pre_get_document_title` is a *short-circuit* filter: WordPress runs the whole
+  chain and takes the **last** non-empty value. Hooking at priority 1 means ThinkRank publishes
+  its title first and every later callback overwrites it. With Divi active
+  (`elegant_titles_filter`, priority **10**), Divi's value wins and the configured
+  Global SEO title template is silently dropped — while ThinkRank's meta description,
+  canonical, OG tags and JSON-LD all still render correctly, so the page looks configured.
+- **Observed hook order** on `https://thinkrank.test` (Divi 5.9.0, ThinkRank 1.28.0, no other SEO plugin active):
+  ```
+  pre_get_document_title
+     [1]  ThinkRank\Frontend\SEO_Manager::override_document_title
+     [10] elegant_titles_filter                 <-- Divi, overwrites ThinkRank
+     [15] ThinkRank\SEO\Author_Archives_Manager::modify_document_title
+  ```
+- **Repro:** set the `post` Global SEO title template to `TRPROBE %sitename%`, publish a post
+  with no per-post SEO title, load it on the front end → `<title>TR probe fixture – thinkrank</title>`
+  (WordPress default), not `TRPROBE thinkrank`. Object-cache flush makes no difference.
+  Reproduced both via the E2E spec and directly with WP-CLI + curl.
+- **Impact:** High — the primary SEO field of the plugin has no effect on any Divi site
+  (and on any theme/plugin that filters the document title at priority > 1). It is invisible
+  because the rest of the head output is correct.
+- **Expected:** ThinkRank's title wins over the theme. Hook `pre_get_document_title` at a late
+  priority (e.g. `PHP_INT_MAX` / `999`) — matching how `Author_Archives_Manager` already
+  registers at 15 — or apply the template on `document_title_parts` instead.
+- **Caught by:** `tests/free/global-seo.spec.js` → `F: saved title template renders in a post <title>`.
+  This test **passes in CI** (wp-env, default theme) and **fails against `thinkrank.test`** —
+  the theme is the variable, which is why the gap survived until a themed site was tested.
