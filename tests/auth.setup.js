@@ -72,9 +72,15 @@ setup('authenticate as WordPress admin', async ({ page }) => {
   // Each waiter maps its own timeout to 'stalled' rather than rejecting, so the
   // one that loses the race settles harmlessly instead of surfacing as a late
   // unhandled rejection during teardown.
+  // `waitUntil: 'commit'` resolves as soon as the wp-admin response commits —
+  // the auth cookie is set by then, which is all storageState needs. The
+  // default ('load') would additionally block on every asset the dashboard
+  // pulls, including third-party ones the active theme preconnects to; one
+  // hung external request there is enough to burn the whole timeout on a login
+  // that actually succeeded.
   const loginError = page.locator('#login_error');
   const outcome = await Promise.race([
-    page.waitForURL(/wp-admin/, { timeout: LOGIN_TIMEOUT }).then(
+    page.waitForURL(/wp-admin/, { waitUntil: 'commit', timeout: LOGIN_TIMEOUT }).then(
       () => 'landed',
       () => 'stalled',
     ),
