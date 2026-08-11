@@ -11,24 +11,52 @@ We work through it **feature by feature, deeply** (not one smoke test per area).
 
 ## 0. Remaining gaps (working tracker)
 
-API breadth + depth (R/W/E) and frontend value-correctness (F) are **essentially
-complete**. Every Free area (31 · 153 routes) and Pro area (15 · 48 routes) has at
-least a passing spec. The open work is **cross-cutting dimensions**, not missing
-features. Ordered by priority:
+Measured against the **live** route lists on the target site (not the counts this
+file was originally written with): Free exposes **167** routes and Pro **52**.
+Route-level coverage is **90/167 Free (54%)** and **27/52 Pro (52%)** — much of
+the remainder is deliberately deferred (see below), but not all of it.
+
+The areas below were **not tracked by this file at all** — they shipped after it
+was written — and now have specs:
+
+| Area | Routes | Spec added |
+|------|--------|------------|
+| `brand-visibility` (free) | 5 | `tests/free/brand-visibility.spec.js` |
+| `ai-insights` (free) | 5 | `tests/free/ai-insights.spec.js` |
+| `mcp` (free) | 10 | `tests/free/mcp.spec.js` |
+| `connection-status`, schema/site-identity/llms-txt validators, `settings-management/category`, `instant-indexing/verify-key` (free) | 9 | `tests/free/validators.spec.js` |
+| `ai/*` generation guards (free) | 4 | `tests/free/ai-tools-guards.spec.js` |
+| `refresh-radar` (pro) | 3 | `tests/pro/refresh-radar.spec.js` |
+| `broken-links` item actions (pro) | 6 | `tests/pro/broken-links-actions.spec.js` |
+| `license` writes (pro) | 5 | `tests/pro/license-guards.spec.js` |
+| `google-analytics`, `url-inspection/batch-inspect` (pro) | 5 | `tests/pro/google-integrations.spec.js` |
+| `internal-links/apply`, `metadata/apply`, `content-brief/insert-post`, 404-log delete (pro) | 4 | `tests/pro/apply-guards.spec.js` |
+
+Where an endpoint mutates a live integration or costs money per call (LLM
+generation, licence activation, MCP connect/rotate, link scans), the spec asserts
+the **guard boundary** — required-param rejection, not-found handling, auth gate —
+rather than the happy path. Happy paths for those need a disposable site.
+
+The remaining open work is **cross-cutting dimensions**, not missing features.
+Ordered by priority:
 
 | # | Gap (dimension) | State | What's missing | Ref |
 |---|-----------------|-------|----------------|-----|
 | G1 | **Security (writes)** | 🟡 | unauth→401/403 proven on 5 endpoints only; no missing-nonce/CSRF rejection, no XSS-payload→escaped-on-output, no rate-limit/429 | §21 |
 | G2 | **Authz breadth (A)** | 🟡 | editor-rejection proven on global-seo + schema writes only; extend to **all** write endpoints; add logged-out matrix; verify role-manager delegable caps actually grant access | §20 |
 | G3 | **Admin UI breadth (U)** | 🟡 | only `essential-seo` has the full fill→save→verify-via-API→restore flow; schema/social/sitemap/analytics tabs, tab switching, form validation, save error/feedback states; wizard flow + migration screen | §18, §6 |
-| G4 | **FINDINGS regression guards** | 🟡 | only robots.txt #1 pinned via `test.fail`; encode #2/#3/#4 as xfail so they auto-flip green when fixed | §23 |
+| G4 | **FINDINGS regression guards** | 🟡 | robots.txt #1 pinned via `test.fail`; #5 (Divi title override) fails live and is unpinned; #6 pinned to current behaviour in `apply-guards`; encode #2/#3/#4 as xfail so they auto-flip green when fixed | §23 |
 | G5 | **Admin post-list integration** | ⬜ | SEO score column, focus-keyword inline edit, bulk actions | §22 |
 | G6 | **Frontend (F) leftovers** | ⬜ | robots.txt (blocked by bug #1), llms.txt (file not generated), Woo product schema, per-type sitemaps/lastmod | §7 |
 | G7 | **CI + portability** | 🟡 | run suite on ephemeral WP, validate a 2nd site via `WP_URL`, consider cross-browser | §24 |
 
 **Deferred by request (not gaps — destructive / external):** settings `reset/restore/import`,
-AI-generation happy-paths (need key), migration `migrate/complete`, broken-links `scan` + item
-actions, `submit/ping`, `llms-txt generate`, `image-seo media-alt/run`. See §8 "Deferred".
+AI-generation happy-paths (need key), migration `migrate/complete`, broken-links `scan`,
+`submit/ping`, `llms-txt generate`, `image-seo media-alt/run`, MCP `connect`/`disconnect`/
+`rotate`/`revoke` (would break live MCP clients paired with the site), licence
+`activate`/`deactivate`/`delete` (consumes a real activation slot), `refresh-radar/apply` and
+`internal-links/apply` (rewrite published content). Broken-links **item actions** are no longer
+deferred — they are covered at the not-found boundary. See §8 "Deferred".
 
 ---
 

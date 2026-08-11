@@ -127,3 +127,26 @@ suite. Not yet filed. Repo routing: free → `WPDevelopers/thinkrank`, pro →
 - **Caught by:** `tests/free/global-seo.spec.js` → `F: saved title template renders in a post <title>`.
   This test **passes in CI** (wp-env, default theme) and **fails against `thinkrank.test`** —
   the theme is the variable, which is why the gap survived until a themed site was tested.
+
+## 6. [Low] `DELETE /redirections/404-logs/{id}` reports success for a row that does not exist
+
+- **Repo:** thinkrank-pro
+- **Where:** `includes/api/class-redirections-endpoint.php` — the `404-logs/(?P<id>\d+)` DELETE handler.
+- **What:** The handler returns `200 {"success":true}` no matter what `id` is passed —
+  a row that never existed, or `id=0` — because it does not check the affected-row count
+  from the delete before reporting success.
+- **Repro:**
+  ```
+  DELETE /wp-json/thinkrank-pro/v1/redirections/404-logs/999999  -> 200 {"success":true}
+  DELETE /wp-json/thinkrank-pro/v1/redirections/404-logs/0       -> 200 {"success":true}
+  ```
+- **Impact:** Low. A client cannot distinguish "deleted" from "there was nothing to delete",
+  so a stale list row silently reappears on refresh with no way to detect it, and a genuinely
+  failed delete is indistinguishable from a successful one.
+- **Inconsistent with the same plugin:** the Broken Links item actions
+  (`/broken-links/{id}/dismiss|recheck|restore|unlink`) correctly return `404 not_found`
+  for a missing record — see `tests/pro/broken-links-actions.spec.js`.
+- **Expected:** `404` when no row matched (matching the broken-links convention), or at
+  minimum a `deleted: <count>` field so the caller can tell.
+- **Caught by:** `tests/pro/apply-guards.spec.js` — pinned to current behaviour with a
+  pointer here, so it flips loudly when fixed.
