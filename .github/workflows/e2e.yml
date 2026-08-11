@@ -81,12 +81,40 @@ jobs:
       # ── Fetch the plugin sources (private repos) ──────────────────────────
       # ref blank → the repo's default branch; set free_ref/pro_ref (e.g. "dev")
       # to test a specific pre-release branch/tag/SHA of each plugin.
+      #
+      # A fix branch usually lives in only ONE of the two repos (e.g. the free
+      # repo has fix/security-276-284, Pro does not), yet the same value often
+      # gets pasted into both inputs. actions/checkout then hard-fails on the
+      # repo that lacks the ref. So resolve each ref first and fall back to that
+      # repo's default branch when it doesn't exist, with a warning in the
+      # summary. `gh api repos/<repo>/commits/<ref>` resolves branches, tags and
+      # raw SHAs in one call, so all three input forms keep working.
+      - name: Resolve plugin refs
+        id: refs
+        env:
+          GH_TOKEN: ${{ secrets.PLUGIN_REPO_TOKEN }}
+          FREE_REF: ${{ inputs.free_ref }}
+          PRO_REF: ${{ inputs.pro_ref }}
+        run: |
+          resolve() { # $1 = repo, $2 = requested ref, $3 = output key
+            repo="$1"; ref="$2"; key="$3"
+            if [ -n "$ref" ] && ! gh api "repos/${repo}/commits/${ref}" --silent 2>/dev/null; then
+              echo "::warning::${repo} has no ref '${ref}' — falling back to its default branch."
+              echo "- :warning: \`${repo}\` has no ref \`${ref}\` — used its **default branch** instead." \
+                >> "$GITHUB_STEP_SUMMARY"
+              ref=""
+            fi
+            echo "${key}=${ref}" >> "$GITHUB_OUTPUT"
+          }
+          resolve WPDevelopers/thinkrank     "$FREE_REF" free
+          resolve WPDevelopers/thinkrank-pro "$PRO_REF"  pro
+
       - name: Check out ThinkRank Free
         uses: actions/checkout@v4
         with:
           repository: WPDevelopers/thinkrank
           token: ${{ secrets.PLUGIN_REPO_TOKEN }}
-          ref: ${{ inputs.free_ref }}
+          ref: ${{ steps.refs.outputs.free }}
           path: .wp-plugins/thinkrank
 
       - name: Check out ThinkRank Pro
@@ -94,19 +122,19 @@ jobs:
         with:
           repository: WPDevelopers/thinkrank-pro
           token: ${{ secrets.PLUGIN_REPO_TOKEN }}
-          ref: ${{ inputs.pro_ref }}
+          ref: ${{ steps.refs.outputs.pro }}
           path: .wp-plugins/thinkrank-pro
 
       - name: Show plugin versions under test
         run: |
           FREE_SHA=$(git -C .wp-plugins/thinkrank rev-parse --short HEAD)
           PRO_SHA=$(git -C .wp-plugins/thinkrank-pro rev-parse --short HEAD)
-          echo "Free: ${{ inputs.free_ref || '(default branch)' }} @ ${FREE_SHA}"
-          echo "Pro:  ${{ inputs.pro_ref || '(default branch)' }} @ ${PRO_SHA}"
+          echo "Free: ${{ steps.refs.outputs.free || '(default branch)' }} @ ${FREE_SHA}"
+          echo "Pro:  ${{ steps.refs.outputs.pro || '(default branch)' }} @ ${PRO_SHA}"
           {
             echo "### Plugin build under test"
-            echo "- **Free:** \`${{ inputs.free_ref || 'default' }}\` @ \`${FREE_SHA}\`"
-            echo "- **Pro:** \`${{ inputs.pro_ref || 'default' }}\` @ \`${PRO_SHA}\`"
+            echo "- **Free:** \`${{ steps.refs.outputs.free || 'default' }}\` @ \`${FREE_SHA}\`"
+            echo "- **Pro:** \`${{ steps.refs.outputs.pro || 'default' }}\` @ \`${PRO_SHA}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
       # ── Build the plugins (assets/, dist/, vendor/ are gitignored) ────────
@@ -164,6 +192,7 @@ jobs:
       # Slack env only on this step, so a CI run posts a single summary
       # (the editor lane below runs without the Slack reporter).
       - name: Run E2E suite (fast lane)
+        id: fast_lane
         run: npm test
         env:
           SLACK_BOT_TOKEN: ${{ inputs.slack_channel != 'off' && secrets.SLACK_BOT_TOKEN || '' }}
@@ -178,8 +207,13 @@ jobs:
       # Assemble the Pages site: this run's report under runs/<id>/ plus a root
       # index.html that redirects to it — so both the per-run URL (used by the
       # Slack link) AND the bare Pages root resolve to the latest report.
+      #
+      # These post-run steps are gated on the suite having actually run: when an
+      # earlier step (plugin checkout, build, wp-env) fails there is no report to
+      # publish, and an unconditional `always()` here buried the real failure
+      # under "cp: cannot stat 'playwright-report/.'" and "playwright: not found".
       - name: Assemble Pages site
-        if: always()
+        if: always() && steps.fast_lane.conclusion != 'skipped'
         run: |
           mkdir -p public/runs/${{ github.run_id }}
           cp -r playwright-report/. public/runs/${{ github.run_id }}/
@@ -194,7 +228,7 @@ jobs:
       # Publish to GitHub Pages (gh-pages branch). keep_files retains prior runs;
       # the root index.html is overwritten each run to point at the newest report.
       - name: Publish report to GitHub Pages
-        if: always()
+        if: always() && hashFiles('public/index.html') != ''
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -202,11 +236,11 @@ jobs:
           keep_files: true
 
       - name: Run editor lane
-        if: always()
+        if: always() && steps.fast_lane.conclusion != 'skipped'
         run: npm run test:editor
 
       - name: Upload Playwright report
-        if: always()
+        if: always() && hashFiles('playwright-report/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
