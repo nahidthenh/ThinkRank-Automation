@@ -39,8 +39,18 @@ setup('ThinkRank Free is active on the target site', async ({ request }) => {
   }
 });
 
+// How long to wait for WordPress to answer the login POST. The local backend
+// can be slow to redirect while under parallel load.
+const LOGIN_TIMEOUT = 45_000;
+
 // ── Log in and persist the admin session ────────────────────────────────────
 setup('authenticate as WordPress admin', async ({ page }) => {
+  // The default per-test timeout is 30s, which is SHORTER than LOGIN_TIMEOUT —
+  // without this the wait below could never run to completion and every login
+  // problem surfaced as a bare "Test timeout of 30000ms exceeded". Headroom on
+  // top covers the login page load and writing the storage state.
+  setup.setTimeout(LOGIN_TIMEOUT + 30_000);
+
   if (!ADMIN_PASS) {
     throw new Error(
       'WP_ADMIN_PASS is empty. Copy .env.example to .env and set the admin password.',
@@ -54,9 +64,44 @@ setup('authenticate as WordPress admin', async ({ page }) => {
   await page.fill('#user_pass', ADMIN_PASS);
   await page.click('#wp-submit');
 
-  // Successful login lands on wp-admin. Generous timeout — the local backend
-  // can be slow to redirect while under parallel load.
-  await expect(page).toHaveURL(/wp-admin/, { timeout: 45_000 });
+  // WordPress answers a login POST one of two ways: it redirects into wp-admin,
+  // or it re-renders the form with #login_error. Racing them means a rejected
+  // credential reports WordPress's own reason ("Unknown username", "The password
+  // you entered … is incorrect") instead of stalling until the timeout — the
+  // whole suite depends on this step, so a silent stall hides every later skip.
+  // Each waiter maps its own timeout to 'stalled' rather than rejecting, so the
+  // one that loses the race settles harmlessly instead of surfacing as a late
+  // unhandled rejection during teardown.
+  const loginError = page.locator('#login_error');
+  const outcome = await Promise.race([
+    page.waitForURL(/wp-admin/, { timeout: LOGIN_TIMEOUT }).then(
+      () => 'landed',
+      () => 'stalled',
+    ),
+    loginError.waitFor({ state: 'visible', timeout: LOGIN_TIMEOUT }).then(
+      () => 'rejected',
+      () => 'stalled',
+    ),
+  ]);
+
+  if (outcome === 'rejected') {
+    const reason = (await loginError.innerText()).replace(/\s+/g, ' ').trim();
+    throw new Error(
+      `WordPress rejected the login for "${ADMIN_USER}" at ${WP_URL}.\n` +
+        `  WordPress said: ${reason}\n` +
+        '  Fix WP_ADMIN_USER / WP_ADMIN_PASS in .env (or .env.example → .env if missing).',
+    );
+  }
+
+  if (outcome === 'stalled') {
+    throw new Error(
+      `Login to ${WP_URL} neither reached wp-admin nor reported an error within ` +
+        `${LOGIN_TIMEOUT / 1000}s. Last URL: ${page.url()}\n` +
+        '  Is the site up, and is WP_URL correct?',
+    );
+  }
+
+  await expect(page).toHaveURL(/wp-admin/);
 
   await page.context().storageState({ path: AUTH_FILE });
 });
