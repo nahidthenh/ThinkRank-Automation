@@ -4,11 +4,16 @@
  *   R  entries list, targets
  *   W  create entry (valid JSON) → listed → delete
  *   E  an entry with invalid JSON is flagged valid_json=false
+ *   E  posting an unknown id is a 404, not a silent duplicate create
  *
- * Self-skips when Pro is inactive; sweeps any leftover tr_e2e_ entries. @pro
+ * Self-skips when Pro is inactive; sweeps any leftover TR E2E entries. @pro
  *
  * GET    /custom-schema/entries   → { success, data: [ {id, title, json, valid_json} ] }
- * POST   /custom-schema/entries   ← { id, title, enabled, json, conditions }
+ * POST   /custom-schema/entries   ← { [id], title, enabled, json, conditions }
+ *                                   Omit `id` to create — the server mints
+ *                                   `cs_<hash>`. A non-blank id that resolves
+ *                                   to nothing is a 404 (thinkrank-pro #114),
+ *                                   so a client-chosen id cannot create.
  * DELETE /custom-schema/entries/{id}
  * GET    /custom-schema/targets   → { success, data: { post_types: [...] } }
  */
@@ -23,6 +28,10 @@ const VALID_JSON = JSON.stringify({
   name: 'TR-E2E-CS',
 });
 
+/** Ids are server-assigned, so leftovers are identified by their title. */
+const TITLE_PREFIX = 'TR E2E CS';
+const NO_CONDITIONS = { include: [], exclude: [] };
+
 test.describe('@pro Custom Schema', () => {
   /** @type {import('@playwright/test').APIRequestContext} */
   let api;
@@ -36,7 +45,7 @@ test.describe('@pro Custom Schema', () => {
     if (!api) return;
     const { body } = await proGet(api, '/custom-schema/entries');
     for (const e of body?.data || []) {
-      if (typeof e.id === 'string' && e.id.startsWith('tr_e2e_')) {
+      if (typeof e.title === 'string' && e.title.startsWith(TITLE_PREFIX)) {
         await api.delete(`${PRO_BASE}/custom-schema/entries/${e.id}`);
       }
     }
@@ -56,16 +65,19 @@ test.describe('@pro Custom Schema', () => {
 
   // ── W ──────────────────────────────────────────────────────────────────
   test('W: create entry with valid JSON → listed → delete', async () => {
-    const id = `tr_e2e_cs_${Date.now()}`;
+    const title = `${TITLE_PREFIX} valid ${Date.now()}`;
     const create = await proPost(api, '/custom-schema/entries', {
-      id,
-      title: 'TR E2E Custom Schema',
+      title,
       enabled: true,
       json: VALID_JSON,
-      conditions: [],
+      conditions: NO_CONDITIONS,
     });
     expect(create.status).toBe(200);
     expect(create.body?.data?.valid_json).toBe(true);
+
+    const id = create.body?.data?.id;
+    expect(typeof id).toBe('string');
+    expect(id.length).toBeGreaterThan(0);
 
     const list = await proGet(api, '/custom-schema/entries');
     expect((list.body?.data || []).map((e) => e.id)).toContain(id);
@@ -79,19 +91,38 @@ test.describe('@pro Custom Schema', () => {
 
   // ── E ──────────────────────────────────────────────────────────────────
   test('E: an entry with invalid JSON is flagged valid_json=false', async () => {
-    const id = `tr_e2e_cs_bad_${Date.now()}`;
+    let id;
     try {
       const create = await proPost(api, '/custom-schema/entries', {
-        id,
-        title: 'TR E2E Bad JSON',
+        title: `${TITLE_PREFIX} bad json ${Date.now()}`,
         enabled: true,
         json: '{ this is not valid json',
-        conditions: [],
+        conditions: NO_CONDITIONS,
       });
       expect(create.status).toBe(200);
       expect(create.body?.data?.valid_json).toBe(false);
+      id = create.body?.data?.id;
     } finally {
-      await api.delete(`${PRO_BASE}/custom-schema/entries/${id}`);
+      if (id) await api.delete(`${PRO_BASE}/custom-schema/entries/${id}`);
     }
+  });
+
+  test('E: posting an unknown id is rejected, not forked into a duplicate', async () => {
+    const ghost = `tr_e2e_missing_${Date.now()}`;
+
+    const create = await proPost(api, '/custom-schema/entries', {
+      id: ghost,
+      title: `${TITLE_PREFIX} ghost`,
+      enabled: true,
+      json: VALID_JSON,
+      conditions: NO_CONDITIONS,
+    });
+    expect(create.status).toBe(404);
+    expect(create.body?.code).toBe('thinkrank_pro_not_found');
+
+    // Assert on the id, not the list length — the suite runs fully parallel,
+    // so a sibling test's create/delete would race a count snapshot.
+    const after = await proGet(api, '/custom-schema/entries');
+    expect((after.body?.data || []).map((e) => e.id)).not.toContain(ghost);
   });
 });
