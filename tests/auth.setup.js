@@ -17,7 +17,7 @@ const AUTH_FILE = 'playwright/.auth/admin.json';
 
 const WP_URL = process.env.WP_URL || 'https://thinkrank.test';
 const ADMIN_USER = process.env.WP_ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.WP_ADMIN_PASS || '';
+const ADMIN_PASS = process.env.WP_ADMIN_PASS || 'admin';
 
 // ── Precondition: ThinkRank Free must be active (Pro is optional) ────────────
 // Free is required for any test to be meaningful. Pro is detected but NOT
@@ -43,6 +43,10 @@ setup('ThinkRank Free is active on the target site', async ({ request }) => {
 // can be slow to redirect while under parallel load.
 const LOGIN_TIMEOUT = 45_000;
 
+// Minimum time to spend on the login form before submitting. See the note at
+// the submit below — bot-protection plugins treat an instant submit as a script.
+const HUMAN_TYPING_FLOOR = 2_500;
+
 // ── Log in and persist the admin session ────────────────────────────────────
 setup('authenticate as WordPress admin', async ({ page }) => {
   // The default per-test timeout is 30s, which is SHORTER than LOGIN_TIMEOUT —
@@ -62,6 +66,15 @@ setup('authenticate as WordPress admin', async ({ page }) => {
   await page.goto(`${WP_URL}/wp-login.php`, { waitUntil: 'domcontentloaded' });
   await page.fill('#user_login', ADMIN_USER);
   await page.fill('#user_pass', ADMIN_PASS);
+
+  // Security plugins commonly reject a login form that comes back faster than
+  // a person could have typed it (BetterShield's honeypot, active on the local
+  // site, uses a 2s floor and answers with a generic "That did not go through"
+  // — indistinguishable from a bad password). Playwright fills the form in
+  // well under that, so pause past the floor before submitting. Cheap once per
+  // run, and it keeps the suite working on sites with that protection on.
+  await page.waitForTimeout(HUMAN_TYPING_FLOOR);
+
   await page.click('#wp-submit');
 
   // WordPress answers a login POST one of two ways: it redirects into wp-admin,

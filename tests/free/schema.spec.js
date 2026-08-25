@@ -3,8 +3,8 @@
  *
  *   R  settings, types, deployed, per-post schema dashboard
  *   W  settings save path; generate schema for a post
- *   E  generate without schema_types / preview without params / settings without
- *      settings → 400
+ *   E  generate without schema_types / generate with an empty schema_types /
+ *      preview without params / settings without settings → 400
  *   F  a published post exposes JSON-LD with an @type
  *
  * Seeds a post and snapshots schema settings; both restored afterward. @free
@@ -56,6 +56,13 @@ test.describe('@free Schema', () => {
   });
 
   // ── E ──────────────────────────────────────────────────────────────────
+  // `schema_types` is declared `required => true, minItems => 1` in the route's
+  // args, so WordPress rejects both shapes in has_valid_params() — before the
+  // callback runs. That means the rejection carries a core validation code, not
+  // the handler's own `missing_schema_types`, which is now unreachable for these
+  // inputs. Assert the codes the route actually returns, and name the offending
+  // param, so a future arg-schema change that drops the requirement fails here
+  // rather than silently letting an empty generate request through.
   test('E: generate without schema_types → 400', async () => {
     const { status, body } = await trPost(api, '/schema/generate', {
       post_id: postId,
@@ -63,7 +70,20 @@ test.describe('@free Schema', () => {
       context_id: postId,
     });
     expect(status).toBe(400);
-    expect(body?.code).toBe('missing_schema_types');
+    expect(body?.code).toBe('rest_missing_callback_param');
+    expect(body?.data?.params, 'schema_types should be the missing param').toContain('schema_types');
+  });
+
+  test('E: generate with an empty schema_types list → 400', async () => {
+    const { status, body } = await trPost(api, '/schema/generate', {
+      post_id: postId,
+      context_type: 'post',
+      context_id: postId,
+      schema_types: [],
+    });
+    expect(status).toBe(400);
+    expect(body?.code).toBe('rest_invalid_param');
+    expect(Object.keys(body?.data?.params ?? {})).toContain('schema_types');
   });
 
   test('E: preview without params → 400', async () => {

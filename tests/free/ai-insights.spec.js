@@ -1,9 +1,14 @@
 /**
- * FREE — AI Insights (AI traffic / brand / auto-AI) read + error contracts.
+ * FREE — AI Insights (AI traffic / auto-AI) read contracts.
  *
- * Previously untested area (5 routes, none covered). All three reads are
- * derived from stored analytics and are safe on any site. `brand/run` triggers
- * live LLM queries (billable), so it is not exercised. @free
+ * The controller registers exactly two routes: `/ai-insights/traffic` and
+ * `/ai-insights/auto-ai`. Both reads are derived from stored analytics and are
+ * safe on any site.
+ *
+ * Brand visibility used to live under `/ai-insights/brand*` and was removed in
+ * plugin 1.30.0 (#301) — the v2 rebuild moved it to `/brand-visibility/*`,
+ * which `tests/free/brand-visibility.spec.js` covers, including its own 404
+ * error contract. Nothing here should reference the v1 brand paths. @free
  */
 
 import { test, expect, request } from '@playwright/test';
@@ -22,20 +27,6 @@ test.describe('@free AI Insights', () => {
   });
 
   // ── R ────────────────────────────────────────────────────────────────────
-  test('R: brand returns queries, history and plan limits', async () => {
-    const { status, body } = await trGet(api, '/ai-insights/brand');
-    expect(status).toBe(200);
-    expect(body?.success).toBe(true);
-
-    const d = body?.data ?? {};
-    expect(Array.isArray(d.queries), 'queries should be a list').toBeTruthy();
-    expect(Array.isArray(d.history), 'history should be a list').toBeTruthy();
-    expect(typeof d.max_queries, 'max_queries should be numeric').toBe('number');
-    expect(d).toHaveProperty('is_pro');
-    // `host` should describe the site under test, not a hardcoded domain.
-    if (d.host) expect(WP_URL).toContain(String(d.host));
-  });
-
   test('R: traffic returns an AI-referral breakdown', async () => {
     const { status, body } = await trGet(api, '/ai-insights/traffic');
     expect(status).toBe(200);
@@ -60,17 +51,11 @@ test.describe('@free AI Insights', () => {
     expect(d).toHaveProperty('available');
   });
 
-  // ── E ────────────────────────────────────────────────────────────────────
-  test('E: deleting a history entry that does not exist → 404', async () => {
-    const resp = await api.delete(`${TR_BASE}/ai-insights/brand/history/99999999`);
-    expect(resp.status()).toBe(404);
-  });
-
   // ── A ────────────────────────────────────────────────────────────────────
   test('A: unauthenticated reads are rejected', async () => {
     const anon = await request.newContext({ baseURL: WP_URL, ignoreHTTPSErrors: true });
     try {
-      for (const path of ['/ai-insights/brand', '/ai-insights/traffic', '/ai-insights/auto-ai']) {
+      for (const path of ['/ai-insights/traffic', '/ai-insights/auto-ai']) {
         const resp = await anon.get(`${TR_BASE}${path}`);
         expect([401, 403], `${path} should reject anonymous callers`).toContain(resp.status());
       }
