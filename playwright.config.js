@@ -43,6 +43,10 @@ const slackReporter = [
  */
 export default defineConfig({
   testDir: './tests',
+  // Sweeps fixtures left by a crashed run. Runs once, after every worker has
+  // exited — a per-worker afterAll sweep raced live tests, because
+  // fullyParallel splits a single file across workers.
+  globalTeardown: './tests/global-teardown.js',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   // One retry locally too — the dashboard's async data calls can occasionally

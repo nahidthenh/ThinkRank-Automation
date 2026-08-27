@@ -4,7 +4,8 @@
  *   W  add a keyword → listed (with hash) → delete → gone
  *   R  keywords, suggestions, history (Search-Console-backed → tolerant)
  *
- * Self-skips when Pro is inactive; sweeps any leftover tr-e2e keywords. @pro
+ * Self-skips when Pro is inactive. The test deletes its own keyword; leftovers
+ * from a crashed run are swept once by tests/global-teardown.js. @pro
  *
  * POST   /rank-tracker/keywords         ← { keywords: [...] }  → { success, added, total }
  * GET    /rank-tracker/keywords         → { success, data: [ {keyword, hash, ...} ] }
@@ -27,14 +28,7 @@ test.describe('@pro Rank Tracker', () => {
   });
 
   test.afterAll(async () => {
-    if (!api) return;
-    const { body } = await proGet(api, '/rank-tracker/keywords');
-    for (const k of body?.data || []) {
-      if (typeof k.keyword === 'string' && k.keyword.startsWith('tr-e2e-kw-')) {
-        await api.delete(`${PRO_BASE}/rank-tracker/keywords/${k.hash}`);
-      }
-    }
-    await api.dispose();
+    await api?.dispose();
   });
 
   // ── W ──────────────────────────────────────────────────────────────────

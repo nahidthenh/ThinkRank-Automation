@@ -2,8 +2,8 @@
  * Phase 5 — PRO Local SEO / Locations (CRUD).
  *
  * Creates a location via the Pro REST API, confirms it is listed, then deletes
- * it — leaving the site clean. Self-skips when Pro is inactive, and sweeps any
- * leftover "TR E2E" locations. @pro
+ * it — leaving the site clean. Self-skips when Pro is inactive; leftovers from
+ * a crashed run are swept once by tests/global-teardown.js. @pro
  *
  * GET    /locations            → { success, data: { items: [...] } }
  * POST   /locations            ← { name, ... }  → created location with id
@@ -28,14 +28,7 @@ test.describe('@pro Local SEO — Locations', () => {
   });
 
   test.afterAll(async () => {
-    if (!api) return;
-    const { body } = await proGet(api, '/locations');
-    for (const it of body?.data?.items || []) {
-      if (typeof it.name === 'string' && it.name.startsWith('TR E2E Location')) {
-        await api.delete(`${PRO_BASE}/locations/${it.id}`);
-      }
-    }
-    await api.dispose();
+    await api?.dispose();
   });
 
   test('create → listed → delete', async () => {

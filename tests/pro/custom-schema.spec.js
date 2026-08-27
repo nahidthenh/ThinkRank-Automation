@@ -6,7 +6,8 @@
  *   E  an entry with invalid JSON is flagged valid_json=false
  *   E  posting an unknown id is a 404, not a silent duplicate create
  *
- * Self-skips when Pro is inactive; sweeps any leftover TR E2E entries. @pro
+ * Self-skips when Pro is inactive. Each test deletes its own entry; leftovers
+ * from a crashed run are swept once by tests/global-teardown.js. @pro
  *
  * GET    /custom-schema/entries   → { success, data: [ {id, title, json, valid_json} ] }
  * POST   /custom-schema/entries   ← { [id], title, enabled, json, conditions }
@@ -42,14 +43,7 @@ test.describe('@pro Custom Schema', () => {
   });
 
   test.afterAll(async () => {
-    if (!api) return;
-    const { body } = await proGet(api, '/custom-schema/entries');
-    for (const e of body?.data || []) {
-      if (typeof e.title === 'string' && e.title.startsWith(TITLE_PREFIX)) {
-        await api.delete(`${PRO_BASE}/custom-schema/entries/${e.id}`);
-      }
-    }
-    await api.dispose();
+    await api?.dispose();
   });
 
   // ── R ──────────────────────────────────────────────────────────────────

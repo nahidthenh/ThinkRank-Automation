@@ -3,8 +3,8 @@
  *
  * Creates a redirect via the Pro REST API, confirms it is listed, verifies the
  * front end actually issues a 301 to the target, toggles it off (redirect stops),
- * then deletes it. Self-skips when Pro is inactive, and sweeps any leftover
- * /tr-e2e-* redirects so the target site is left clean. @pro
+ * then deletes it. Self-skips when Pro is inactive; leftover /tr-e2e-* redirects
+ * from a crashed run are swept once by tests/global-teardown.js. @pro
  *
  * POST /thinkrank-pro/v1/redirections ← { source_url, target_url, match_type, http_code, status }
  *   → 201 { success, data: { id, ... } }
@@ -29,16 +29,7 @@ test.describe('@pro Redirections', () => {
   });
 
   test.afterAll(async () => {
-    if (!api) return;
-    // Sweep every redirect this suite may have created (incl. failed runs).
-    const { body } = await proGet(api, '/redirections');
-    const items = body?.data?.items || [];
-    for (const it of items) {
-      if (typeof it.source_url === 'string' && it.source_url.includes('tr-e2e')) {
-        await api.delete(`${PRO_BASE}/redirections/${it.id}`);
-      }
-    }
-    await api.dispose();
+    await api?.dispose();
   });
 
   test('create → listed → 301 on front → toggle off → delete', async ({ request }) => {
