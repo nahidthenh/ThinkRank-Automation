@@ -1,0 +1,148 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: pro/custom-schema.spec.js >> @pro Custom Schema >> R: entries and targets respond
+- Location: tests/pro/custom-schema.spec.js:50:3
+
+# Error details
+
+```
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 404
+```
+
+# Test source
+
+```ts
+  1   | /**
+  2   |  * PRO — Custom Schema (deep). Feature #8.
+  3   |  *
+  4   |  *   R  entries list, targets
+  5   |  *   W  create entry (valid JSON) → listed → delete
+  6   |  *   E  an entry with invalid JSON is flagged valid_json=false
+  7   |  *   E  posting an unknown id is a 404, not a silent duplicate create
+  8   |  *
+  9   |  * Self-skips when Pro is inactive. Each test deletes its own entry; leftovers
+  10  |  * from a crashed run are swept once by tests/global-teardown.js. @pro
+  11  |  *
+  12  |  * GET    /custom-schema/entries   → { success, data: [ {id, title, json, valid_json} ] }
+  13  |  * POST   /custom-schema/entries   ← { [id], title, enabled, json, conditions }
+  14  |  *                                   Omit `id` to create — the server mints
+  15  |  *                                   `cs_<hash>`. A non-blank id that resolves
+  16  |  *                                   to nothing is a 404 (thinkrank-pro #114),
+  17  |  *                                   so a client-chosen id cannot create.
+  18  |  * DELETE /custom-schema/entries/{id}
+  19  |  * GET    /custom-schema/targets   → { success, data: { post_types: [...] } }
+  20  |  */
+  21  | 
+  22  | import { test, expect } from '@playwright/test';
+  23  | import { createApiContext, proGet, proPost, PRO_BASE } from '../fixtures/wp-api.js';
+  24  | import { isProActive } from '../fixtures/pro.js';
+  25  | 
+  26  | const VALID_JSON = JSON.stringify({
+  27  |   '@context': 'https://schema.org',
+  28  |   '@type': 'WebSite',
+  29  |   name: 'TR-E2E-CS',
+  30  | });
+  31  | 
+  32  | /** Ids are server-assigned, so leftovers are identified by their title. */
+  33  | const TITLE_PREFIX = 'TR E2E CS';
+  34  | const NO_CONDITIONS = { include: [], exclude: [] };
+  35  | 
+  36  | test.describe('@pro Custom Schema', () => {
+  37  |   /** @type {import('@playwright/test').APIRequestContext} */
+  38  |   let api;
+  39  | 
+  40  |   test.beforeAll(async () => {
+  41  |     test.skip(!(await isProActive()), 'ThinkRank Pro not active on the target site');
+  42  |     api = await createApiContext();
+  43  |   });
+  44  | 
+  45  |   test.afterAll(async () => {
+  46  |     await api?.dispose();
+  47  |   });
+  48  | 
+  49  |   // ── R ──────────────────────────────────────────────────────────────────
+  50  |   test('R: entries and targets respond', async () => {
+  51  |     const entries = await proGet(api, '/custom-schema/entries');
+> 52  |     expect(entries.status).toBe(200);
+      |                            ^ Error: expect(received).toBe(expected) // Object.is equality
+  53  |     expect(Array.isArray(entries.body?.data)).toBeTruthy();
+  54  | 
+  55  |     const targets = await proGet(api, '/custom-schema/targets');
+  56  |     expect(targets.status).toBe(200);
+  57  |     expect(Array.isArray(targets.body?.data?.post_types)).toBeTruthy();
+  58  |   });
+  59  | 
+  60  |   // ── W ──────────────────────────────────────────────────────────────────
+  61  |   test('W: create entry with valid JSON → listed → delete', async () => {
+  62  |     const title = `${TITLE_PREFIX} valid ${Date.now()}`;
+  63  |     const create = await proPost(api, '/custom-schema/entries', {
+  64  |       title,
+  65  |       enabled: true,
+  66  |       json: VALID_JSON,
+  67  |       conditions: NO_CONDITIONS,
+  68  |     });
+  69  |     expect(create.status).toBe(200);
+  70  |     expect(create.body?.data?.valid_json).toBe(true);
+  71  | 
+  72  |     const id = create.body?.data?.id;
+  73  |     expect(typeof id).toBe('string');
+  74  |     expect(id.length).toBeGreaterThan(0);
+  75  | 
+  76  |     const list = await proGet(api, '/custom-schema/entries');
+  77  |     expect((list.body?.data || []).map((e) => e.id)).toContain(id);
+  78  | 
+  79  |     const del = await api.delete(`${PRO_BASE}/custom-schema/entries/${id}`);
+  80  |     expect(del.ok()).toBeTruthy();
+  81  | 
+  82  |     const after = await proGet(api, '/custom-schema/entries');
+  83  |     expect((after.body?.data || []).map((e) => e.id)).not.toContain(id);
+  84  |   });
+  85  | 
+  86  |   // ── E ──────────────────────────────────────────────────────────────────
+  87  |   test('E: an entry with invalid JSON is flagged valid_json=false', async () => {
+  88  |     let id;
+  89  |     try {
+  90  |       const create = await proPost(api, '/custom-schema/entries', {
+  91  |         title: `${TITLE_PREFIX} bad json ${Date.now()}`,
+  92  |         enabled: true,
+  93  |         json: '{ this is not valid json',
+  94  |         conditions: NO_CONDITIONS,
+  95  |       });
+  96  |       expect(create.status).toBe(200);
+  97  |       expect(create.body?.data?.valid_json).toBe(false);
+  98  |       id = create.body?.data?.id;
+  99  |     } finally {
+  100 |       if (id) await api.delete(`${PRO_BASE}/custom-schema/entries/${id}`);
+  101 |     }
+  102 |   });
+  103 | 
+  104 |   test('E: posting an unknown id is rejected, not forked into a duplicate', async () => {
+  105 |     const ghost = `tr_e2e_missing_${Date.now()}`;
+  106 | 
+  107 |     const create = await proPost(api, '/custom-schema/entries', {
+  108 |       id: ghost,
+  109 |       title: `${TITLE_PREFIX} ghost`,
+  110 |       enabled: true,
+  111 |       json: VALID_JSON,
+  112 |       conditions: NO_CONDITIONS,
+  113 |     });
+  114 |     expect(create.status).toBe(404);
+  115 |     expect(create.body?.code).toBe('thinkrank_pro_not_found');
+  116 | 
+  117 |     // Assert on the id, not the list length — the suite runs fully parallel,
+  118 |     // so a sibling test's create/delete would race a count snapshot.
+  119 |     const after = await proGet(api, '/custom-schema/entries');
+  120 |     expect((after.body?.data || []).map((e) => e.id)).not.toContain(ghost);
+  121 |   });
+  122 | });
+  123 | 
+```
