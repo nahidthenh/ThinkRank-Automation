@@ -181,6 +181,23 @@ jobs:
       - name: Activate ThinkRank Free + Pro
         run: npx wp-env run cli wp plugin activate thinkrank thinkrank-pro
 
+      # Pro gates its feature components behind License\Manager::is_valid()
+      # (thinkrank-pro #93): unlicensed, only `license` and `admin` load, so
+      # API\Manager never registers a single feature route and every
+      # /thinkrank-pro/v1 call 404s — which silently wiped out all ~50 @pro
+      # tests on this ephemeral site.
+      #
+      # is_valid() returns true on `status === 'valid'` alone, so writing the
+      # option satisfies the gate offline: no call to the licensing server, no
+      # OTP, no activation slot consumed.
+      #
+      # Deliberately NO key. CronChecker::check() bails on an empty key, so the
+      # weekly check can never overwrite this status mid-run; seeding a fake key
+      # instead would let the store write back "invalid" and break the suite
+      # partway through.
+      - name: Mark ThinkRank Pro as licensed (ephemeral CI site)
+        run: npx wp-env run cli wp option update thinkrank_pro_software__license_status valid
+
       # Pretty permalinks — required for the rewrite-based public URLs the suite
       # checks (e.g. /sitemap_index.xml). Fresh wp-env defaults to plain (?p=).
       - name: Enable pretty permalinks
@@ -195,6 +212,9 @@ jobs:
         id: fast_lane
         run: npm test
         env:
+          # A licensed Pro is a hard precondition in CI: without it the @pro
+          # specs self-skip and the run would go green having tested nothing.
+          REQUIRE_PRO: '1'
           SLACK_BOT_TOKEN: ${{ inputs.slack_channel != 'off' && secrets.SLACK_BOT_TOKEN || '' }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           # The Slack "View Results!" link points at the PUBLIC hosted report
@@ -238,6 +258,8 @@ jobs:
       - name: Run editor lane
         if: always() && steps.fast_lane.conclusion != 'skipped'
         run: npm run test:editor
+        env:
+          REQUIRE_PRO: '1'
 
       - name: Upload Playwright report
         if: always() && hashFiles('playwright-report/**') != ''

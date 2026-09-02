@@ -2,7 +2,9 @@
  * Auth + precondition setup.
  *
  * Runs once before the test suite:
- *   1. Verifies the target site has ThinkRank Free + Pro active (fails fast if not).
+ *   1. Verifies the target site has ThinkRank Free active (fails fast if not),
+ *      and reports whether Pro is absent, present-but-unlicensed, or licensed.
+ *      REQUIRE_PRO=1 turns anything short of a licensed Pro into a failure.
  *   2. Logs into wp-admin and saves the session so every test starts authenticated.
  *
  * Nothing here is tied to a specific site — WP_URL and the admin credentials
@@ -10,6 +12,7 @@
  */
 
 import { test as setup, expect } from '@playwright/test';
+import { getProState } from './fixtures/pro.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -21,8 +24,19 @@ const ADMIN_PASS = process.env.WP_ADMIN_PASS || 'admin';
 
 // ── Precondition: ThinkRank Free must be active (Pro is optional) ────────────
 // Free is required for any test to be meaningful. Pro is detected but NOT
-// required, so the suite stays honest on a Free-only site — @pro specs
-// self-skip when the Pro REST namespace is absent (see fixtures/pro.js).
+// required by default, so the suite stays honest on a Free-only site — @pro
+// specs self-skip when Pro's feature routes are absent (see fixtures/pro.js).
+//
+// "Absent" and "unlicensed" are reported separately on purpose. Pro gates its
+// feature components behind a licence (thinkrank-pro #93) while the licensing
+// SDK still registers /license/*, so an unlicensed site looks active to a
+// namespace check but serves none of the feature routes the @pro specs call.
+// That state used to be invisible: the specs ran and failed on 404s.
+//
+// Set REQUIRE_PRO=1 (CI does) to make anything short of a licensed Pro a hard
+// failure, so a run cannot quietly skip the ~50 @pro tests and still go green.
+const REQUIRE_PRO = process.env.REQUIRE_PRO === '1';
+
 setup('ThinkRank Free is active on the target site', async ({ request }) => {
   const resp = await request.get(`${WP_URL}/wp-json/`);
   expect(resp.ok(), `Target site ${WP_URL} did not respond to /wp-json/`).toBeTruthy();
@@ -34,9 +48,24 @@ setup('ThinkRank Free is active on the target site', async ({ request }) => {
     `ThinkRank Free is not active on ${WP_URL} (missing "thinkrank/v1" REST namespace)`,
   ).toContain('thinkrank/v1');
 
-  if (!namespaces.includes('thinkrank-pro/v1')) {
-    console.warn(`\n⚠  ThinkRank Pro not active on ${WP_URL} — @pro tests will be skipped.\n`);
+  const proState = await getProState();
+
+  const reason = {
+    absent: `ThinkRank Pro is not active on ${WP_URL} (no "thinkrank-pro/v1" REST namespace).`,
+    unlicensed:
+      `ThinkRank Pro is active on ${WP_URL} but UNLICENSED, so only /license/* is registered ` +
+      'and every feature route 404s.\n' +
+      "  Fix: wp option update thinkrank_pro_software__license_status valid  (reads as a licence, " +
+      'makes no call to the licensing server).',
+  }[proState];
+
+  if (proState === 'active') return;
+
+  if (REQUIRE_PRO) {
+    throw new Error(`${reason}\n  REQUIRE_PRO=1 is set, so this is a failure rather than a skip.`);
   }
+
+  console.warn(`\n⚠  ${reason}\n   @pro tests will be skipped.\n`);
 });
 
 // How long to wait for WordPress to answer the login POST. The local backend
